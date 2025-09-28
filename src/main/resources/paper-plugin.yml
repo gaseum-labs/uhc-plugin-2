@@ -1,0 +1,7 @@
+name: UHCPlugin2
+version: '1.0'
+main: org.gaseumlabs.uhcplugin.UHCPlugin
+description: The second UHC Plugin
+author: Balduvian
+api-version: '1.21.8'
+bootstrapper: org.gaseumlabs.uhcplugin.UHCBootstrapper

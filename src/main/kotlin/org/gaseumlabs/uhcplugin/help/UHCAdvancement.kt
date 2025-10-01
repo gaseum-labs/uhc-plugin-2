@@ -6,6 +6,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
+import org.gaseumlabs.uhcplugin.UHCPlugin
 import org.gaseumlabs.uhcplugin.util.JSONWrite
 
 class UHCAdvancement(
@@ -22,6 +23,9 @@ class UHCAdvancement(
 	val criteria: Criteria,
 	val experienceReward: Int? = null,
 ) {
+	val criteriaNames: Set<String>
+		get() = criteria.list.keys
+
 	val children = ArrayList<UHCAdvancement>()
 
 	enum class Frame(val serialName: String) {
@@ -76,6 +80,40 @@ class UHCAdvancement(
 										}
 									}
 								}
+							}
+						}
+					)
+				)
+			}
+
+			fun obtainAllItemList(vararg materials: Material): Criteria {
+				return Criteria().add(
+					"obtain",
+					Trigger(
+						Trigger.Type.INVENTORY_CHANGED,
+						JSONWrite().obj {
+							it.property("items").array { write ->
+								materials.forEach { material ->
+									write.obj { write ->
+										write.property("items").array { write ->
+											write.value(material.key.toString())
+										}
+									}
+								}
+							}
+						}
+					)
+				)
+			}
+
+			fun obtainItem(itemStack: ItemStack): Criteria {
+				return Criteria().add(
+					"obtain",
+					Trigger(
+						Trigger.Type.INVENTORY_CHANGED,
+						JSONWrite().obj {
+							it.property("items").array {
+								it.json(UHCPlugin.unsafe.serializeItemAsJson(itemStack).toString())
 							}
 						}
 					)
@@ -194,21 +232,6 @@ class UHCAdvancement(
 	}
 
 	companion object {
-		//fun itemToJson(map: Map<String, Any>): String {
-		//	val id = map["id"] as String
-		//	val count = map["count"] as Int
-		//	val components = map["components"] as Map<String, Any>
-//
-		//	return JSONWrite().obj {
-		//		it.property("id").value(id)
-		//			.property("count").value(count)
-		//			.property("components").obj { write ->
-		//				components.forEach { (key, value) ->
-		//					write.property(key).json(value as String)
-		//				}
-		//			}
-		//	}.toString()
-		//}
 
 		fun createRoot(
 			key: NamespacedKey,
@@ -221,7 +244,7 @@ class UHCAdvancement(
 			hidden: Boolean = false,
 			criteria: Criteria,
 		): UHCAdvancement {
-			return UHCAdvancement(
+			val advancement = UHCAdvancement(
 				key = key,
 				icon = icon,
 				title = title,
@@ -232,6 +255,7 @@ class UHCAdvancement(
 				hidden = hidden,
 				criteria = criteria,
 			)
+			return advancement
 		}
 	}
 }

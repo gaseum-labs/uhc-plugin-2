@@ -1,19 +1,19 @@
 package org.gaseumlabs.uhcplugin.core.playerData
 
+import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Entity
-import org.bukkit.entity.Player
 import org.bukkit.entity.Zombie
 import java.util.*
 
 class PlayerDatas(
-	val list: ArrayList<PlayerData>,
+	private val list: ArrayList<PlayerData>,
 	private val uuidToData: HashMap<UUID, PlayerData>,
 ) {
 	fun get(uuid: UUID): PlayerData? {
 		return uuidToData[uuid]
 	}
 
-	fun get(player: Player): PlayerData? {
+	fun get(player: OfflinePlayer): PlayerData? {
 		return uuidToData[player.uniqueId]
 	}
 
@@ -23,7 +23,7 @@ class PlayerDatas(
 		return playerData
 	}
 
-	fun getActive(player: Player): PlayerData? {
+	fun getActive(player: OfflinePlayer): PlayerData? {
 		val playerData = uuidToData[player.uniqueId] ?: return null
 		if (!playerData.isActive) return null
 		return playerData
@@ -41,6 +41,12 @@ class PlayerDatas(
 
 	val active: List<PlayerData>
 		get() = list.filter { playerData -> playerData.isActive }
+
+	fun addOrReplace(playerData: PlayerData) {
+		list.removeIf { existing -> existing.uuid == playerData.uuid }
+		list.add(playerData)
+		uuidToData[playerData.uuid] = playerData
+	}
 
 	companion object {
 		fun create(playerDatas: List<PlayerData>): PlayerDatas {

@@ -1,43 +1,51 @@
 package org.gaseumlabs.uhcplugin.core.command
 
 import com.mojang.brigadier.Command
+import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
-import com.mojang.brigadier.tree.LiteralCommandNode
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
-import org.gaseumlabs.uhcplugin.core.CommandUtil
-import org.gaseumlabs.uhcplugin.core.Death
-import org.gaseumlabs.uhcplugin.core.PlayerManip
-import org.gaseumlabs.uhcplugin.core.UHC
+import org.bukkit.Bukkit
+import org.bukkit.GameMode
+import org.gaseumlabs.uhcplugin.core.*
+import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
+import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
+import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
+import org.gaseumlabs.uhcplugin.core.team.Teams
 
 object GameCommands {
-	fun build(): LiteralCommandNode<CommandSourceStack> {
+	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
 		val uhcNode = Commands.literal("uhc")
 
 		uhcNode.then(
 			Commands.literal("reset")
-				.requires { source -> source.sender.isOp && UHC.isGame() }
+				.requires(CommandUtil::requiresPregameOp)
 				.executes(::execReset)
 		)
 
 		uhcNode.then(
 			Commands.literal("spectate")
-				.requires { source -> UHC.isGame() }
+				.requires(CommandUtil::requiresGame)
 				.executes(::execSpectate)
 		)
 
 		uhcNode.then(
 			Commands.literal("forfeit")
-				.requires { source -> UHC.isGame() }
+				.requires(CommandUtil::requiresGame)
 				.executes(::execForfeit)
 		)
 
-		return uhcNode.build()
+		uhcNode.then(
+			Commands.literal("addlate")
+				.requires(CommandUtil::requiresGameOp)
+				.then(
+					CommandUtil.createPlayerArgument("player", "Add late player")
+						.executes(::execAddLate)
+				)
+		)
 	}
 
 	fun execReset(context: CommandContext<CommandSourceStack>): Int {
-		val game = UHC.getGame() ?: return CommandUtil.error(context, "No ongoing game")
-
 		UHC.destroyGame()
 
 		CommandUtil.successMessage(context, "Game reset")
@@ -71,6 +79,61 @@ object GameCommands {
 		UHC.onPlayerDeath(game, playerData, player.location, null, Death.getForfeitDeathMessage(player), true)
 
 		Death.dropPlayer(player)
+
+		return Command.SINGLE_SUCCESS
+	}
+
+	fun execAddLate(context: CommandContext<CommandSourceStack>): Int {
+		val game = UHC.getActiveGame() ?: return CommandUtil.error(context, "No ongoing game")
+		val playerName = context.getArgument("player", String::class.java)
+
+		val player = Bukkit.getOfflinePlayerIfCached(playerName) ?: return CommandUtil.error(
+			context,
+			"The player does not exist"
+		)
+
+		val playerData = game.playerDatas.get(player)
+
+		val (team, memberEntity) = when {
+			playerData == null -> {
+				Teams.findTeamInNeed(game) ?: Teams.TeamInNeedResult(
+					Teams.addTeam(listOf(player.uniqueId)),
+					null
+				)
+			}
+
+			!playerData.isActive -> {
+				Teams.TeamInNeedResult(
+					playerData.team,
+					Teams.getSpawnBuddy(game, playerData.team)
+				)
+			}
+
+			else -> {
+				return CommandUtil.error(context, "${player.name} is already in the game")
+			}
+		}
+
+		val newPlayerData = PlayerData.create(player.uniqueId, team)
+		game.playerDatas.addOrReplace(newPlayerData)
+
+		val location = memberEntity?.location ?: PlayerSpreader.getSingleLocation(
+			player.uniqueId,
+			game.gameWorld,
+			UHCBorder.getCurrentRadius(game),
+			PlayerSpreader.CONFIG_DEFAULT
+		) ?: game.gameWorld.spawnLocation
+
+		newPlayerData.executeAction { player ->
+			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, newPlayerData.getMaxHealth(), location)
+		}.onNoZombie {
+			OfflineZombie.spawn(
+				player.uniqueId,
+				PlayerCapture.createInitial(location, newPlayerData.getMaxHealth())
+			)
+		}
+
+		CommandUtil.successMessage(context, "${player.name} added late to the game")
 
 		return Command.SINGLE_SUCCESS
 	}

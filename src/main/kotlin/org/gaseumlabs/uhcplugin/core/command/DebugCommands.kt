@@ -1,28 +1,22 @@
 package org.gaseumlabs.uhcplugin.core.command
 
 import com.mojang.brigadier.Command
-import com.mojang.brigadier.tree.LiteralCommandNode
+import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemType
-import org.gaseumlabs.uhcplugin.help.UHCAdvancementManager
+import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 object DebugCommands {
-	fun build(): LiteralCommandNode<CommandSourceStack> {
+	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
 		val advancementNode = Commands.literal("advancement")
 
 		advancementNode.then(
 			Commands.literal("register").executes {
-				UHCAdvancementManager.registerRoot(UHCAdvancements.UHC)
-				return@executes Command.SINGLE_SUCCESS
-			}
-		)
-		advancementNode.then(
-			Commands.literal("unregister").executes {
-				UHCAdvancementManager.unregister()
+				AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
 				return@executes Command.SINGLE_SUCCESS
 			}
 		)
@@ -44,10 +38,6 @@ object DebugCommands {
 		debugNode.then(advancementNode)
 		debugNode.then(serializeNode)
 
-		val uhcNode = Commands.literal("uhc")
-
 		uhcNode.then(debugNode)
-
-		return uhcNode.build()
 	}
 }

@@ -1,12 +1,14 @@
 package org.gaseumlabs.uhcplugin.help
 
 import org.bukkit.Bukkit
-import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.advancement.Advancement
 import org.gaseumlabs.uhcplugin.UHCPlugin
 
-object UHCAdvancementManager {
-	@SuppressWarnings("deprecation")
+object AdvancementRegistry {
+	private val advancementMap = HashMap<UHCAdvancement, Advancement>()
+	private val keyMap = HashMap<NamespacedKey, Advancement>()
+
 	fun registerRoot(root: UHCAdvancement) {
 		val navigatorStack = ArrayList<UHCAdvancement>()
 		navigatorStack.add(root)
@@ -27,21 +29,19 @@ object UHCAdvancementManager {
 		}
 		Bukkit.getServer().reloadData()
 
-		for (advancement in allAdvancements) {
-			UHCPlugin.unsafe.loadAdvancement(advancement.key, advancement.serialize())
+		for (uhc in allAdvancements) {
+			val minecraft = UHCPlugin.unsafe.loadAdvancement(uhc.key, uhc.serialize())
+
+			advancementMap[uhc] = minecraft
+			keyMap[uhc.key] = minecraft
 		}
 	}
 
-	fun unregister() {
-		val uhcAdvKey = NamespacedKey(UHCPlugin.Companion.self, "adv_aaa")
-
-		if (Bukkit.getServer().getAdvancement(uhcAdvKey) != null) {
-			UHCPlugin.unsafe.removeAdvancement(uhcAdvKey)
-			Bukkit.getServer().reloadData()
-		}
+	fun getMinecraft(key: NamespacedKey): Advancement? {
+		return keyMap[key]
 	}
 
-	fun test() {
-		Material.APPLE.key
+	fun getMinecraft(uhc: UHCAdvancement): Advancement {
+		return advancementMap[uhc] ?: throw Exception("UHC Advancement not registered")
 	}
 }

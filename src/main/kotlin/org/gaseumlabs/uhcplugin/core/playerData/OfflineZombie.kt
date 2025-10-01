@@ -35,7 +35,7 @@ object OfflineZombie {
 
 	fun spawn(uuid: UUID, capture: PlayerCapture): Zombie {
 		val zombie = capture.location.world.spawn(capture.location, Zombie::class.java) { zombie ->
-			zombie.setAdult()
+			if (capture.isSmall) zombie.setBaby() else zombie.setAdult()
 			zombie.setAI(false)
 			zombie.persistentDataContainer.set(KEY_UUID, PersistentDataType.STRING, uuid.toString())
 			zombie.persistentDataContainer.set(KEY_EXPERIENCE, PersistentDataType.INTEGER, capture.totalExperience)
@@ -58,6 +58,7 @@ object OfflineZombie {
 			zombie.equipment.itemInOffHandDropChance = 0.0f
 
 			zombie.fireTicks = capture.fireTicks
+			zombie.fallDistance = capture.fallDistance
 
 			val offlinePlayer = Bukkit.getOfflinePlayer(uuid)
 			offlinePlayer.name?.let { name ->

@@ -13,7 +13,8 @@ import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
 import org.gaseumlabs.uhcplugin.fix.BrewFix
 import org.gaseumlabs.uhcplugin.fix.PearlFix
 import org.gaseumlabs.uhcplugin.fix.PortalFix
-import org.gaseumlabs.uhcplugin.help.UHCAdvancementManager
+import org.gaseumlabs.uhcplugin.help.AdvancementEvents
+import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 
 class UHCPlugin : JavaPlugin() {
@@ -31,10 +32,11 @@ class UHCPlugin : JavaPlugin() {
 		Bukkit.getPluginManager().registerEvents(PearlFix(), this)
 		Bukkit.getPluginManager().registerEvents(PortalFix(), this)
 		Bukkit.getPluginManager().registerEvents(BrewFix(), this)
+		Bukkit.getPluginManager().registerEvents(AdvancementEvents(), this)
 
 		Bukkit.getScheduler().scheduleSyncDelayedTask(this, UHC::init)
 
-		UHCAdvancementManager.registerRoot(UHCAdvancements.UHC)
+		AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
 
 		GameRunnerBot.setup()
 	}

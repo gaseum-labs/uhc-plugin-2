@@ -14,9 +14,11 @@ import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
+import org.gaseumlabs.uhcplugin.core.team.Teams
 import org.gaseumlabs.uhcplugin.core.timer.*
 import org.gaseumlabs.uhcplugin.core.timer.Timer
 import org.gaseumlabs.uhcplugin.fix.BorderFix
+import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
 import org.gaseumlabs.uhcplugin.world.Seed
 import org.gaseumlabs.uhcplugin.world.WorldManager
 import java.util.*
@@ -31,6 +33,7 @@ object UHC {
 
 	fun init() {
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(UHCPlugin.self, UHC::tick, 0, 1)
+		Bukkit.setDefaultGameMode(GameMode.ADVENTURE)
 	}
 
 	fun tick() {
@@ -74,24 +77,27 @@ object UHC {
 		WorldManager.destroyWorld(WorldManager.UHCWorldType.NETHER)
 
 		this.game = null
-		this.pregame = Pregame.create()
 	}
 
 	fun moveToLobby(player: Player) {
 		val lobbyWorld = WorldManager.getWorld(WorldManager.UHCWorldType.LOBBY)
-		PlayerManip.resetPlayer(player, Lobby.GAME_MODE, 20.0, lobbyWorld.spawnLocation)
+		PlayerManip.resetPlayer(player, GameMode.ADVENTURE, 20.0, lobbyWorld.spawnLocation)
 	}
 
 	fun moveAllToLobby(game: Game) {
 		val lobbyWorld = WorldManager.getWorld(WorldManager.UHCWorldType.LOBBY)
 		Bukkit.getOnlinePlayers().forEach { player ->
 			if (player.world === game.gameWorld || player.world === game.netherWorld) {
-				PlayerManip.resetPlayer(player, Lobby.GAME_MODE, 20.0, lobbyWorld.spawnLocation)
+				PlayerManip.resetPlayer(player, GameMode.ADVENTURE, 20.0, lobbyWorld.spawnLocation)
 			}
 		}
 	}
 
 	fun startGame(pregame: Pregame) {
+		if (Teams.list.isEmpty()) {
+			Teams.setRandomTeams(UHC.pregame.readyPlayers.toList(), 2)
+		}
+
 		destroyGame()
 
 		val gameWorld = WorldManager.createWorld(WorldManager.UHCWorldType.GAME, Seed.goodSeedList.random(), true)
@@ -118,11 +124,14 @@ object UHC {
 			gameWorld,
 			PlayerSpreader.CONFIG_DEFAULT,
 			borderRadius,
-			pregame.readyPlayers.map { uuid -> listOf(uuid) }
+			Teams.list.map { team -> team.memberUUIDs }
 		)
 
-		val playerDatas = PlayerDatas.create(pregame.playerUUIDToLocation.map { (uuid, location) ->
-			PlayerData.create(uuid)
+		val playerDatas = PlayerDatas.create(pregame.playerUUIDToLocation.map { (uuid) ->
+			PlayerData.create(
+				uuid,
+				Teams.list.find { team -> team.memberUUIDs.contains(uuid) }
+					?: throw Exception("could not find team for $uuid"))
 		})
 
 		val game = Game(
@@ -133,7 +142,7 @@ object UHC {
 			borderRadius,
 			finalRadius,
 			gameWorld,
-			netherWorld
+			netherWorld,
 		)
 
 		game.playerDatas.active.forEach { playerData ->
@@ -147,7 +156,7 @@ object UHC {
 					location
 				)
 			}.onNoZombie {
-				playerData.offlineRecord.onSpawn(
+				playerData.offlineRecord.onGameSpawn(
 					OfflineZombie.spawn(
 						playerData.uuid,
 						PlayerCapture.createInitial(location, playerData.getMaxHealth())
@@ -155,6 +164,8 @@ object UHC {
 				)
 			}
 		}
+
+		PlayerAdvancement.wipe(Bukkit.getOnlinePlayers())
 
 		this.pregame = Pregame.create()
 		this.game = game
@@ -180,6 +191,7 @@ object UHC {
 					game.playerRespawnTimers.add(RespawnTimer(playerData.uuid, 1))
 				} else {
 					playerData.executeAction { player ->
+						player.isGlowing
 						PlayerManip.resetPlayer(
 							player,
 							GameMode.SURVIVAL,
@@ -187,7 +199,7 @@ object UHC {
 							respawnLocation
 						)
 					}.onNoZombie {
-						playerData.offlineRecord.onSpawn(
+						playerData.offlineRecord.onRespawn(
 							OfflineZombie.spawn(
 								playerData.uuid,
 								PlayerCapture.createInitial(
@@ -225,10 +237,17 @@ object UHC {
 		game.gameWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false)
 		game.gameWorld.setGameRule(GameRule.RANDOM_TICK_SPEED, 0)
 		game.gameWorld.setGameRule(GameRule.DO_FIRE_TICK, false)
+
+		pregame = Pregame.create()
+
+		Bukkit.getOnlinePlayers().forEach { player ->
+			player.updateCommands()
+		}
 	}
 
 	fun getGame(): Game? = game
-	fun getPregame(): Pregame? = if (game == null) pregame else null
+	fun getActiveGame(): Game? = if (game == null || game?.isDone == true) null else game
+	fun getPregame(): Pregame? = if (game == null || game?.isDone == true) pregame else null
 	fun isPregame(): Boolean = getPregame() != null
 	fun isGame(): Boolean = game != null
 
@@ -260,6 +279,8 @@ object UHC {
 
 		game.ledger.kills.add(LedgerKill(game.timer, playerData.uuid, killerUuid))
 
+		//TODO make game winning by team
+		//TODO broadcast elimination by team
 		val remainingPlayers = game.playerDatas.active.size
 
 		Broadcast.broadcastGame(game, deathMessage)

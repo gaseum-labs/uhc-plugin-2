@@ -2,8 +2,8 @@ package org.gaseumlabs.uhcplugin.help
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemType
+import org.bukkit.potion.PotionType
 import org.gaseumlabs.uhcplugin.UHCPlugin
 
 object UHCAdvancements {
@@ -127,10 +127,7 @@ object UHCAdvancements {
 		icon = ItemType.NETHERRACK.createItemStack(),
 		title = Component.text("UHC Level 2"),
 		description = Component.text("Construct a nether portal and enter it."),
-		criteria = UHCAdvancement.Criteria.changedDimension(
-			NamespacedKey("minecraft", "overworld"),
-			NamespacedKey("minecraft", "nether")
-		)
+		criteria = UHCAdvancement.Criteria.impossible()
 	)
 
 	val UHC_BLAZE_ROD = UHC_NETHER.append(
@@ -147,5 +144,30 @@ object UHCAdvancements {
 		title = Component.text("Warts and All"),
 		description = Component.text("One to craft a Brewing Stand, one to fuel it."),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.NETHER_WART)
+	)
+
+	val splashHealing2 = ItemType.SPLASH_POTION.createItemStack() { meta ->
+		meta.basePotionType = PotionType.STRONG_HEALING
+	}
+
+	val UHC_HEALING_2 = UHC_BLAZE_ROD.append(
+		key = UHCPlugin.key("uhc_healing_2"),
+		icon = splashHealing2,
+		title = Component.text("This is Healing, Too"),
+		description = Component.text("Brew a splash potion of healing II. The gold standard!"),
+		criteria = UHCAdvancement.Criteria.obtainItem(splashHealing2)
+	)
+
+	val UHC_FULL_DIAMOND = UHC_DIAMOND.append(
+		key = UHCPlugin.key("uhc_full_diamond"),
+		icon = ItemType.DIAMOND_CHESTPLATE.createItemStack(),
+		title = Component.text("Cover Me in Diamonds"),
+		description = Component.text("Every bit counts!"),
+		criteria = UHCAdvancement.Criteria.obtainAllItemList(
+			Material.DIAMOND_HELMET,
+			Material.DIAMOND_CHESTPLATE,
+			Material.DIAMOND_LEGGINGS,
+			Material.DIAMOND_BOOTS,
+		)
 	)
 }

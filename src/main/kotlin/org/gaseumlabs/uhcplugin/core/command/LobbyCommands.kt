@@ -2,63 +2,53 @@ package org.gaseumlabs.uhcplugin.core.command
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.IntegerArgumentType
-import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
-import com.mojang.brigadier.tree.LiteralCommandNode
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
 import org.bukkit.OfflinePlayer
-import org.bukkit.entity.Player
 import org.gaseumlabs.uhcplugin.core.Broadcast
-import org.gaseumlabs.uhcplugin.core.CommandUtil
+import org.gaseumlabs.uhcplugin.core.PlayerManip
 import org.gaseumlabs.uhcplugin.core.UHC
+import org.gaseumlabs.uhcplugin.world.WorldManager
 
 object LobbyCommands {
-	fun build(): LiteralCommandNode<CommandSourceStack> {
-		val uhcNode = Commands.literal("uhc")
-
+	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
 		uhcNode.then(
 			Commands.literal("ready")
-				.requires { source -> source.sender is Player && UHC.isPregame() }
+				.requires(CommandUtil::requiresPregame)
 				.executes(::execReady)
 		)
 
 		uhcNode.then(
 			Commands.literal("unready")
-				.requires { source -> source.sender is Player && UHC.isPregame() }
+				.requires(CommandUtil::requiresPregame)
 				.executes(::execUnready)
 		)
 
 		uhcNode.then(
 			Commands.literal("forceready")
-				.requires { source -> source.sender.isOp && UHC.isPregame() }
+				.requires(CommandUtil::requiresPregameOp)
 				.then(
-					Commands.argument("player", StringArgumentType.word()).suggests(
-						CommandUtil.OfflinePlayerSuggestionProvider(
-							Component.text("Force ready player", NamedTextColor.GREEN)
-						)
-					).executes(::execForceReady)
+					CommandUtil.createPlayerArgument("player", "Force ready player")
+						.executes(::execForceReady)
 				)
 		)
 
 		uhcNode.then(
 			Commands.literal("forceunready")
-				.requires { source -> source.sender.isOp && UHC.isPregame() }
+				.requires(CommandUtil::requiresPregameOp)
 				.then(
-					Commands.argument("player", StringArgumentType.word()).suggests(
-						CommandUtil.OfflinePlayerSuggestionProvider(
-							Component.text("Force ready player", NamedTextColor.GREEN)
-						)
-					).executes(::execForceUnready)
+					CommandUtil.createPlayerArgument("player", "Force ready player")
+						.executes(::execForceUnready)
 				)
 		)
 
 		uhcNode.then(
 			Commands.literal("minreadyplayers")
-				.requires { source -> source.sender.isOp && UHC.isPregame() }
+				.requires(CommandUtil::requiresPregameOp)
 				.then(
 					Commands.literal("set").then(
 						Commands.argument("value", IntegerArgumentType.integer(1, 16))
@@ -69,17 +59,14 @@ object LobbyCommands {
 
 		uhcNode.then(
 			Commands.literal("readyall")
-				.requires { source -> source.sender.isOp && UHC.isPregame() }
+				.requires(CommandUtil::requiresPregameOp)
 				.executes(::execReadyAll)
 		)
 
 		uhcNode.then(
 			Commands.literal("lobby")
-				.requires { source -> source.sender is Player }
 				.executes(::execLobby)
 		)
-
-		return uhcNode.build()
 	}
 
 	private fun broadcastReady(player: OfflinePlayer) {
@@ -183,6 +170,20 @@ object LobbyCommands {
 	}
 
 	private fun execLobby(context: CommandContext<CommandSourceStack>): Int {
+		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
+
+		val game = UHC.getGame()
+		val playerData = game?.playerDatas?.get(player)
+
+		if (playerData != null && playerData.isActive) return CommandUtil.error(context, "You are currently playing!")
+
+		PlayerManip.resetPlayer(
+			player,
+			GameMode.ADVENTURE,
+			20.0,
+			WorldManager.getWorld(WorldManager.UHCWorldType.LOBBY).spawnLocation
+		)
+
 		return Command.SINGLE_SUCCESS
 	}
 }

@@ -20,7 +20,7 @@ class Login : Listener {
 		val zombie = offlineRecord.zombie
 
 		if (zombie != null) {
-			PlayerManip.resetPlayer(player, zombie, playerData.getMaxHealth(), offlineRecord.wipe)
+			PlayerManip.resetPlayer(player, zombie, playerData.getMaxHealth(), offlineRecord.wipeMode)
 		} else if (offlineRecord.spectateLocation != null) {
 			PlayerManip.makeSpectator(player, offlineRecord.spectateLocation)
 		}
@@ -49,7 +49,9 @@ class Login : Listener {
 							playerData.getMaxHealth(),
 							player.inventory,
 							player.fireTicks,
-							player.totalExperience
+							player.totalExperience,
+							player.fallDistance,
+							player.isSneaking || player.isSwimming
 						)
 					)
 				)

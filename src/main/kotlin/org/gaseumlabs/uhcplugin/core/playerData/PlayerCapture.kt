@@ -18,6 +18,8 @@ data class PlayerCapture(
 	val maxHealth: Double,
 	val fireTicks: Int,
 	val totalExperience: Int,
+	val fallDistance: Float,
+	val isSmall: Boolean,
 ) {
 	companion object {
 		fun create(
@@ -27,6 +29,8 @@ data class PlayerCapture(
 			inventory: PlayerInventory?,
 			fireTicks: Int,
 			totalExperience: Int,
+			fallDistance: Float,
+			isSmall: Boolean,
 		): PlayerCapture {
 			return PlayerCapture(
 				inventory?.itemInMainHand?.coerceEmpty(),
@@ -41,6 +45,8 @@ data class PlayerCapture(
 				maxHealth,
 				fireTicks,
 				totalExperience,
+				fallDistance,
+				isSmall,
 			)
 		}
 
@@ -57,7 +63,9 @@ data class PlayerCapture(
 				maxHealth,
 				maxHealth,
 				0,
-				0
+				0,
+				0.0f,
+				false
 			)
 		}
 	}

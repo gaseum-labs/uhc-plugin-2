@@ -8,6 +8,8 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.Zombie
 import org.bukkit.potion.PotionEffect
 import org.gaseumlabs.uhcplugin.UHCPlugin
+import org.gaseumlabs.uhcplugin.core.playerData.WipeMode
+import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
 
 object PlayerManip {
 	fun resetPlayer(player: Player, gameMode: GameMode, maxHealth: Double, location: Location) {
@@ -36,28 +38,33 @@ object PlayerManip {
 		player.teleport(location)
 	}
 
-	fun resetPlayer(player: Player, offlineZombie: Zombie, maxHealth: Double, wipe: Boolean) {
-		player.gameMode = GameMode.SURVIVAL
-		if (wipe) player.inventory.clear()
-		if (wipe) player.clearActiveItem()
-		if (wipe) player.setStatistic(Statistic.TIME_SINCE_REST, 0)
+	fun resetPlayer(player: Player, offlineZombie: Zombie, maxHealth: Double, wipeMode: WipeMode) {
+		val doWipe = wipeMode > WipeMode.KEEP
 
-		if (wipe) resetAttributes(player, maxHealth)
+		player.gameMode = GameMode.SURVIVAL
+		if (doWipe) player.inventory.clear()
+		if (doWipe) player.clearActiveItem()
+		if (doWipe) player.setStatistic(Statistic.TIME_SINCE_REST, 0)
+
+		if (doWipe) resetAttributes(player, maxHealth)
 
 		player.fallDistance = offlineZombie.fallDistance
-		if (wipe) player.saturation = 5.0f
-		if (wipe) player.foodLevel = 20
+		if (doWipe) player.saturation = 5.0f
+		if (doWipe) player.foodLevel = 20
 		player.health = offlineZombie.health
 		player.fireTicks = offlineZombie.fireTicks
-		if (wipe) player.level = 0
-		if (wipe) player.exp = 0.0f
+		if (doWipe) player.level = 0
+		if (doWipe) player.exp = 0.0f
 
-		if (wipe) player.enderPearls.forEach { it.remove() }
-		if (wipe) player.deathScreenScore = 0
-		if (wipe) player.totalExperience = 0
+		if (doWipe) player.enderPearls.forEach { it.remove() }
+		if (doWipe) player.deathScreenScore = 0
+		if (doWipe) player.totalExperience = 0
 		player.absorptionAmount = offlineZombie.absorptionAmount
 
 		setPotionEffects(player, offlineZombie.activePotionEffects)
+
+		if (wipeMode === WipeMode.HARD_WIPE) PlayerAdvancement.wipe(listOf(player))
+
 		player.teleport(offlineZombie.location)
 	}
 

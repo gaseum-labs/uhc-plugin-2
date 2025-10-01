@@ -1,14 +1,20 @@
-package org.gaseumlabs.uhcplugin.core
+package org.gaseumlabs.uhcplugin.core.command
 
+import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import io.papermc.paper.command.brigadier.CommandSourceStack
+import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.MessageComponentSerializer
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.gaseumlabs.uhcplugin.core.Broadcast
+import org.gaseumlabs.uhcplugin.core.UHC
 import java.util.concurrent.CompletableFuture
 
 object CommandUtil {
@@ -53,5 +59,33 @@ object CommandUtil {
 			}
 			return builder.buildFuture()
 		}
+	}
+
+	fun requiresPregame(source: CommandSourceStack): Boolean {
+		return UHC.isPregame()
+	}
+
+	fun requiresPregameOp(source: CommandSourceStack): Boolean {
+		return source.sender.isOp && UHC.isPregame()
+	}
+
+	fun requiresGame(source: CommandSourceStack): Boolean {
+		return UHC.isGame()
+	}
+
+	fun requiresGameOp(source: CommandSourceStack): Boolean {
+		return source.sender.isOp && UHC.isGame()
+	}
+
+	fun requiresOp(source: CommandSourceStack): Boolean {
+		return source.sender.isOp
+	}
+	
+	fun createPlayerArgument(name: String, description: String): RequiredArgumentBuilder<CommandSourceStack, String> {
+		return Commands.argument(name, StringArgumentType.word()).suggests(
+			OfflinePlayerSuggestionProvider(
+				Component.text(description, NamedTextColor.GREEN)
+			)
+		)
 	}
 }

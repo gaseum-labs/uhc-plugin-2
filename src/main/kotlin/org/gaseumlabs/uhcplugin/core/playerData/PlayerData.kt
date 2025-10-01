@@ -5,34 +5,42 @@ import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.entity.Zombie
+import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import java.util.*
 
-data class OfflineRecord(var zombie: Zombie?, var spectateLocation: Location?, var wipe: Boolean) {
+data class OfflineRecord(var zombie: Zombie?, var spectateLocation: Location?, var wipeMode: WipeMode) {
 	fun onDeath(location: Location) {
 		this.zombie?.remove()
 		this.zombie = null
-		this.wipe = true
+		this.wipeMode = WipeMode.WIPE
 		this.spectateLocation = location
 	}
 
 	fun onLogin() {
 		this.zombie?.remove()
 		this.zombie = null
-		this.wipe = false
+		this.wipeMode = WipeMode.KEEP
 		this.spectateLocation = null
 	}
 
 	fun onLogout(zombie: Zombie) {
 		this.zombie?.remove()
 		this.zombie = zombie
-		this.wipe = false
+		this.wipeMode = WipeMode.KEEP
 		this.spectateLocation = null
 	}
 
-	fun onSpawn(zombie: Zombie) {
+	fun onGameSpawn(zombie: Zombie) {
 		this.zombie?.remove()
 		this.zombie = zombie
-		this.wipe = true
+		this.wipeMode = WipeMode.HARD_WIPE
+		this.spectateLocation = null
+	}
+
+	fun onRespawn(zombie: Zombie) {
+		this.zombie?.remove()
+		this.zombie = zombie
+		this.wipeMode = WipeMode.WIPE
 		this.spectateLocation = null
 	}
 }
@@ -41,8 +49,9 @@ class PlayerData(
 	val uuid: UUID,
 	var numDeaths: Int,
 	var isActive: Boolean,
+	var team: UHCTeam,
 ) {
-	var offlineRecord: OfflineRecord = OfflineRecord(null, null, false)
+	var offlineRecord: OfflineRecord = OfflineRecord(null, null, WipeMode.KEEP)
 
 	fun getPlayer(): Player? {
 		return Bukkit.getServer().getPlayer(uuid)
@@ -73,11 +82,12 @@ class PlayerData(
 	}
 
 	companion object {
-		fun create(uuid: UUID): PlayerData {
+		fun create(uuid: UUID, team: UHCTeam): PlayerData {
 			return PlayerData(
 				uuid,
 				0,
 				true,
+				team,
 			)
 		}
 	}

@@ -1,6 +1,8 @@
 package org.gaseumlabs.uhcplugin.core.team
 
+import net.kyori.adventure.text.Component
 import org.bukkit.scoreboard.Team
+import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 import java.util.*
 
 class UHCTeam(
@@ -12,4 +14,8 @@ class UHCTeam(
 ) {
 	val size: Int
 		get() = memberUUIDs.size
+
+	val members = ArrayList<PlayerData>()
+
+	fun nameComponent() = Component.text(name, color.textColor)
 }

@@ -6,7 +6,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BrewingStartEvent
 import org.bukkit.event.inventory.BrewEvent
-import org.gaseumlabs.uhcplugin.core.Broadcast
+import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
 
 class BrewFix : Listener {
 	@EventHandler

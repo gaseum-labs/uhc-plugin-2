@@ -1,10 +1,10 @@
-package org.gaseumlabs.uhcplugin.core
+package org.gaseumlabs.uhcplugin.core.broadcast
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
+import org.gaseumlabs.uhcplugin.core.Game
 
 object Broadcast {
 	fun broadcast(playerToMessage: (Player) -> Component?) {
@@ -26,18 +26,12 @@ object Broadcast {
 		}
 	}
 
-	fun broadcastGame(game: Game, message: Component) {
+	fun broadcastGame(game: Game, vararg messages: Component) {
 		game.gameWorld.players.forEach { player ->
-			player.sendMessage(message)
+			messages.forEach { player.sendMessage(it) }
 		}
 		game.netherWorld.players.forEach { player ->
-			player.sendMessage(message)
+			messages.forEach { player.sendMessage(it) }
 		}
 	}
-
-	fun game(text: String) = Component.text(text, TextColor.color(0xfc9d03))
-
-	fun success(text: String): Component = Component.text(text, TextColor.color(0x1cc916))
-
-	fun error(text: String): Component = Component.text(text, TextColor.color(0xe61014))
 }

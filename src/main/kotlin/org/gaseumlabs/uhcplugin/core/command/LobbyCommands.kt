@@ -9,9 +9,9 @@ import io.papermc.paper.command.brigadier.Commands
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.OfflinePlayer
-import org.gaseumlabs.uhcplugin.core.Broadcast
 import org.gaseumlabs.uhcplugin.core.PlayerManip
 import org.gaseumlabs.uhcplugin.core.UHC
+import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
 import org.gaseumlabs.uhcplugin.world.WorldManager
 
 object LobbyCommands {

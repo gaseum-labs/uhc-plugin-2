@@ -13,8 +13,8 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import org.gaseumlabs.uhcplugin.core.Broadcast
 import org.gaseumlabs.uhcplugin.core.UHC
+import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
 import java.util.concurrent.CompletableFuture
 
 object CommandUtil {
@@ -80,7 +80,7 @@ object CommandUtil {
 	fun requiresOp(source: CommandSourceStack): Boolean {
 		return source.sender.isOp
 	}
-	
+
 	fun createPlayerArgument(name: String, description: String): RequiredArgumentBuilder<CommandSourceStack, String> {
 		return Commands.argument(name, StringArgumentType.word()).suggests(
 			OfflinePlayerSuggestionProvider(

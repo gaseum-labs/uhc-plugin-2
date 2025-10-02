@@ -5,10 +5,10 @@ import io.papermc.paper.entity.TeleportFlag
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.entity.Player
-import org.gaseumlabs.uhcplugin.core.Broadcast
 import org.gaseumlabs.uhcplugin.core.Game
 import org.gaseumlabs.uhcplugin.core.PlayerManip
 import org.gaseumlabs.uhcplugin.core.UHCBorder
+import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
 import org.gaseumlabs.uhcplugin.core.timer.MultiTimerHolder
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
 import org.gaseumlabs.uhcplugin.core.timer.YDamageTimer

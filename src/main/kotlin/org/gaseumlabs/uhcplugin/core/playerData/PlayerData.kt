@@ -45,7 +45,7 @@ data class OfflineRecord(var zombie: Zombie?, var spectateLocation: Location?, v
 	}
 }
 
-class PlayerData(
+class PlayerData private constructor(
 	val uuid: UUID,
 	var numDeaths: Int,
 	var isActive: Boolean,
@@ -81,14 +81,22 @@ class PlayerData(
 		return isActive && numDeaths < 10
 	}
 
+	fun reset() {
+		numDeaths = 0
+		isActive = true
+		offlineRecord = OfflineRecord(null, null, WipeMode.KEEP)
+	}
+
 	companion object {
-		fun create(uuid: UUID, team: UHCTeam): PlayerData {
-			return PlayerData(
+		fun createInitial(uuid: UUID, team: UHCTeam): PlayerData {
+			val playerData = PlayerData(
 				uuid,
 				0,
 				true,
 				team,
 			)
+			team.members.add(playerData)
+			return playerData
 		}
 	}
 }

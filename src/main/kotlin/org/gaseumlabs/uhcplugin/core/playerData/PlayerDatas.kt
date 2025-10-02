@@ -42,10 +42,10 @@ class PlayerDatas(
 	val active: List<PlayerData>
 		get() = list.filter { playerData -> playerData.isActive }
 
-	fun addOrReplace(playerData: PlayerData) {
-		list.removeIf { existing -> existing.uuid == playerData.uuid }
+	fun add(playerData: PlayerData): PlayerData {
 		list.add(playerData)
 		uuidToData[playerData.uuid] = playerData
+		return playerData
 	}
 
 	companion object {

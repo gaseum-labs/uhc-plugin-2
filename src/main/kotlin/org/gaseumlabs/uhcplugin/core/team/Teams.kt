@@ -9,15 +9,16 @@ import java.util.*
 import kotlin.math.ceil
 
 object Teams {
-	val list = ArrayList<UHCTeam>()
-	//val uuidToTeam = HashMap<UUID, UHCTeam>()
+	private val list = ArrayList<UHCTeam>()
 
+	val teams: List<UHCTeam>
+		get() = list
+	
 	fun clearTeams() {
 		list.forEach { uhcTeam ->
 			uhcTeam.team.unregister()
 		}
 		list.clear()
-		//uuidToTeam.clear()
 	}
 
 	fun setRandomTeams(players: List<UUID>, size: Int) {
@@ -38,12 +39,6 @@ object Teams {
 
 			UHCTeam(uuid, ArrayList(shuffledPlayers.slice(index * size..<(index + 1) * size)), teamName, color, team)
 		})
-
-		//list.forEach { team ->
-		//	team.memberUUIDs.forEach { uuid ->
-		//		uuidToTeam[uuid] = team
-		//	}
-		//}
 	}
 
 	fun adjustMinecraftTeam(team: Team, name: String, color: TeamColor) {
@@ -65,23 +60,19 @@ object Teams {
 		val uhcTeam = UHCTeam(uuid, ArrayList(players), teamName, color, team)
 
 		list.add(uhcTeam)
-		//players.forEach { uuid ->
-		//	uuidToTeam[uuid] = uhcTeam
-		//}
 
 		return uhcTeam
 	}
 
 	data class TeamInNeedResult(val team: UHCTeam, val memberEntity: LivingEntity?)
 
-	fun findTeamInNeed(game: Game): TeamInNeedResult? {
-		val maxTeamSize = list.maxOfOrNull { team -> team.size } ?: return null
+	fun findTeamInNeedOr(game: Game, onNewTeam: () -> UHCTeam): TeamInNeedResult {
+		val maxTeamSize = list.maxOfOrNull { team -> team.size } ?: return TeamInNeedResult(onNewTeam(), null)
 		for (team in list) {
 			if (team.size == maxTeamSize) continue
 			return TeamInNeedResult(team, getSpawnBuddy(game, team))
 		}
-
-		return null
+		return TeamInNeedResult(onNewTeam(), null)
 	}
 
 	fun getSpawnBuddy(game: Game, team: UHCTeam): LivingEntity? {
@@ -91,12 +82,4 @@ object Teams {
 
 		return activeMembers.firstOrNull()?.getEntity()
 	}
-
-	//fun playersTeam(player: OfflinePlayer): UHCTeam? {
-	//	return uuidToTeam[player.uniqueId]
-	//}
-//
-	//fun playersTeam(uuid: UUID): UHCTeam? {
-	//	return uuidToTeam[uuid]
-	//}
 }

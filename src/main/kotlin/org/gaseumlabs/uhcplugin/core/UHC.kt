@@ -7,6 +7,8 @@ import org.bukkit.GameRule
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.gaseumlabs.uhcplugin.UHCPlugin
+import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
+import org.gaseumlabs.uhcplugin.core.broadcast.MSG
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.core.phase.Grace
 import org.gaseumlabs.uhcplugin.core.phase.Shrink
@@ -15,6 +17,7 @@ import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
 import org.gaseumlabs.uhcplugin.core.team.Teams
+import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import org.gaseumlabs.uhcplugin.core.timer.*
 import org.gaseumlabs.uhcplugin.core.timer.Timer
 import org.gaseumlabs.uhcplugin.fix.BorderFix
@@ -56,14 +59,14 @@ object UHC {
 		if (result == null) {
 			if (numReadyPlayers >= pregame.minReadyPlayers) {
 				startGameTimer.set(CountdownTimer(TickTime.ofSeconds(10)))
-				Broadcast.broadcast(Broadcast.game("Game starting in 2 minutes"))
+				Broadcast.broadcast(MSG.game("Game starting in 2 minutes"))
 			}
 		} else {
 			if (result.isDone()) {
 				startGame(pregame)
 			} else if (numReadyPlayers < pregame.minReadyPlayers) {
 				startGameTimer.cancel()
-				Broadcast.broadcast(Broadcast.game("Game cancelled because not enough players are ready"))
+				Broadcast.broadcast(MSG.game("Game cancelled because not enough players are ready"))
 			}
 		}
 	}
@@ -94,7 +97,7 @@ object UHC {
 	}
 
 	fun startGame(pregame: Pregame) {
-		if (Teams.list.isEmpty()) {
+		if (Teams.teams.isEmpty()) {
 			Teams.setRandomTeams(UHC.pregame.readyPlayers.toList(), 2)
 		}
 
@@ -124,13 +127,13 @@ object UHC {
 			gameWorld,
 			PlayerSpreader.CONFIG_DEFAULT,
 			borderRadius,
-			Teams.list.map { team -> team.memberUUIDs }
+			Teams.teams.map { team -> team.memberUUIDs }
 		)
 
 		val playerDatas = PlayerDatas.create(pregame.playerUUIDToLocation.map { (uuid) ->
-			PlayerData.create(
+			PlayerData.createInitial(
 				uuid,
-				Teams.list.find { team -> team.memberUUIDs.contains(uuid) }
+				Teams.teams.find { team -> team.memberUUIDs.contains(uuid) }
 					?: throw Exception("could not find team for $uuid"))
 		})
 
@@ -277,10 +280,13 @@ object UHC {
 			true
 		}
 
+		if (!isElimination) return
+
+
 		game.ledger.kills.add(LedgerKill(game.timer, playerData.uuid, killerUuid))
 
-		//TODO make game winning by team
-		//TODO broadcast elimination by team
+		//TODO cleanup
+		//TODO use onPlayerEliminate
 		val remainingPlayers = game.playerDatas.active.size
 
 		Broadcast.broadcastGame(game, deathMessage)
@@ -288,17 +294,64 @@ object UHC {
 		val deathPlayer = Bukkit.getOfflinePlayer(playerData.uuid)
 
 		if (remainingPlayers == 0) {
-			Broadcast.broadcastGame(game, Broadcast.game("No one wins?"))
+			Broadcast.broadcastGame(game, MSG.game("No one wins?"))
 			endGame(game)
 		} else if (remainingPlayers == 1) {
-			val winner = Bukkit.getOfflinePlayer(game.playerDatas.active[0].uuid)
-			Broadcast.broadcastGame(game, Broadcast.game("${winner.name ?: "An unknown player"} wins!"))
-			endGame(game)
+
 		} else {
 			if (isElimination) Broadcast.broadcastGame(
 				game,
-				Broadcast.game("${deathPlayer.name ?: "An unknown player"} eliminated, $remainingPlayers players remain")
+				MSG.game("${deathPlayer.name ?: "An unknown player"} eliminated, $remainingPlayers players remain")
 			)
 		}
+	}
+
+	private fun onPlayerEliminate(
+		game: Game,
+		playerData: PlayerData,
+	) {
+		playerData.isActive = false
+
+		val playerTeam = playerData.team
+
+		val activeTeams = getActiveTeams(game)
+
+		val isTeamElimination = activeTeams.none { team -> team === playerTeam }
+
+		//TODO create summary class on game complete
+		//TODO move ledger kill logic into here
+		//TODO finish branches
+		//TODO don't add kill credit on teamkill
+		//TODO make a PostGame class that takes over from game when it's done
+		if (isTeamElimination) {
+			when (activeTeams.size) {
+				0 -> {
+
+				}
+
+				1 -> {
+					val winningTeam = activeTeams.first()
+
+					Broadcast.broadcastGame(
+						game,
+						MSG.game("Team ").append(winningTeam.nameComponent()).append(MSG.game(" wins!"))
+					)
+					endGame(game)
+				}
+
+				else -> {
+					Broadcast.broadcastGame(
+						game,
+						MSG.game("Team ").append(playerTeam.nameComponent())
+							.append(MSG.game(" has been eliminated!")),
+						MSG.gameBold("${activeTeams.size}").append(MSG.game(" teams remain"))
+					)
+				}
+			}
+		}
+	}
+
+	private fun getActiveTeams(game: Game): List<UHCTeam> {
+		return Teams.teams.filter { team -> team.members.any { it.isActive } }
 	}
 }

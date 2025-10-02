@@ -1,9 +1,9 @@
 package org.gaseumlabs.uhcplugin.core.phase
 
 import org.bukkit.GameRule
-import org.gaseumlabs.uhcplugin.core.Broadcast
 import org.gaseumlabs.uhcplugin.core.Game
 import org.gaseumlabs.uhcplugin.core.UHCBorder
+import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
 
 class Shrink(val duration: Int) : Phase(PhaseType.SHRINK) {
 	fun start(game: Game) {

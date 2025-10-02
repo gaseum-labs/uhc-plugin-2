@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.entity.LivingEntity
 import org.gaseumlabs.uhcplugin.core.*
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
@@ -92,20 +93,23 @@ object GameCommands {
 			"The player does not exist"
 		)
 
-		val playerData = game.playerDatas.get(player)
+		val existingPlayerData = game.playerDatas.get(player)
 
-		val (team, memberEntity) = when {
-			playerData == null -> {
-				Teams.findTeamInNeed(game) ?: Teams.TeamInNeedResult(
-					Teams.addTeam(listOf(player.uniqueId)),
-					null
+		data class AddLateResult(val playerData: PlayerData, val spawnBuddy: LivingEntity?)
+
+		val (playerData, spawnBuddy) = when {
+			existingPlayerData == null -> {
+				val (team, spawnBuddy) = Teams.findTeamInNeedOr(game) { Teams.addTeam(listOf(player.uniqueId)) }
+				AddLateResult(
+					game.playerDatas.add(PlayerData.createInitial(player.uniqueId, team)),
+					spawnBuddy,
 				)
 			}
 
-			!playerData.isActive -> {
-				Teams.TeamInNeedResult(
-					playerData.team,
-					Teams.getSpawnBuddy(game, playerData.team)
+			!existingPlayerData.isActive -> {
+				AddLateResult(
+					existingPlayerData,
+					Teams.getSpawnBuddy(game, existingPlayerData.team)
 				)
 			}
 
@@ -114,22 +118,21 @@ object GameCommands {
 			}
 		}
 
-		val newPlayerData = PlayerData.create(player.uniqueId, team)
-		game.playerDatas.addOrReplace(newPlayerData)
+		playerData.reset()
 
-		val location = memberEntity?.location ?: PlayerSpreader.getSingleLocation(
+		val location = spawnBuddy?.location ?: PlayerSpreader.getSingleLocation(
 			player.uniqueId,
 			game.gameWorld,
 			UHCBorder.getCurrentRadius(game),
 			PlayerSpreader.CONFIG_DEFAULT
 		) ?: game.gameWorld.spawnLocation
 
-		newPlayerData.executeAction { player ->
-			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, newPlayerData.getMaxHealth(), location)
+		playerData.executeAction { player ->
+			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, playerData.getMaxHealth(), location)
 		}.onNoZombie {
 			OfflineZombie.spawn(
 				player.uniqueId,
-				PlayerCapture.createInitial(location, newPlayerData.getMaxHealth())
+				PlayerCapture.createInitial(location, playerData.getMaxHealth())
 			)
 		}
 

@@ -12,7 +12,7 @@ class Login : Listener {
 	@EventHandler
 	fun onLogin(event: PlayerJoinEvent) {
 		val player = event.player
-		val game = UHC.getGame() ?: return
+		val game = UHC.activeGame() ?: return
 		val playerData = game.playerDatas.get(player) ?: return
 
 		val offlineRecord = playerData.offlineRecord
@@ -31,7 +31,7 @@ class Login : Listener {
 	@EventHandler
 	fun onLeave(event: PlayerQuitEvent) {
 		val player = event.player
-		val game = UHC.getGame() ?: return
+		val game = UHC.activeGame() ?: return
 		val playerData = game.playerDatas.get(player) ?: return
 
 		if (!playerData.isActive) return

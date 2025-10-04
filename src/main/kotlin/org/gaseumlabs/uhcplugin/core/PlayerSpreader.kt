@@ -4,6 +4,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.world.YFinder
 import java.util.*
 import kotlin.math.PI
@@ -57,10 +58,16 @@ object PlayerSpreader {
 
 	data class Coord(val x: Int, val z: Int)
 
-	fun getSingleLocation(playerUuid: UUID, world: World, outerRadius: Int, config: Config): Location? {
+	fun getSingleLocation(
+		activeGame: ActiveGame,
+		playerUuid: UUID,
+		world: World,
+		outerRadius: Int,
+		config: Config,
+	): Location? {
 		val random = Random(world.seed.xor(world.time))
 
-		val playerLocations = UHC.getGame()?.playerDatas?.active?.mapNotNull { playerData ->
+		val playerLocations = activeGame.playerDatas.active.mapNotNull { playerData ->
 			if (playerUuid == playerData.uuid) return@mapNotNull null
 			val location = playerData.getEntity()?.location ?: return@mapNotNull null
 			if (location.world === world) location else null
@@ -73,7 +80,7 @@ object PlayerSpreader {
 			)
 		}
 
-		if (playerLocations == null || playerLocations.isEmpty()) {
+		if (playerLocations.isEmpty()) {
 			for ((x, z) in candidateCoords) {
 				val location = findLocationsAt(world, config, x, z, 1, random)?.firstOrNull()
 				if (location != null) return location

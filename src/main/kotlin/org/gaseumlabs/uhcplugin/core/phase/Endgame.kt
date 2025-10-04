@@ -2,16 +2,20 @@ package org.gaseumlabs.uhcplugin.core.phase
 
 import io.papermc.paper.block.TileStateInventoryHolder
 import io.papermc.paper.entity.TeleportFlag
+import org.bukkit.Axis
+import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.entity.Player
-import org.gaseumlabs.uhcplugin.core.Game
 import org.gaseumlabs.uhcplugin.core.PlayerManip
 import org.gaseumlabs.uhcplugin.core.UHCBorder
 import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
+import org.gaseumlabs.uhcplugin.core.broadcast.MSG
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.core.timer.MultiTimerHolder
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
 import org.gaseumlabs.uhcplugin.core.timer.YDamageTimer
+import org.gaseumlabs.uhcplugin.fix.PortalFix
 import org.gaseumlabs.uhcplugin.util.MathUtil
 import org.gaseumlabs.uhcplugin.world.YFinder
 
@@ -25,15 +29,44 @@ class EndgamePhase(val finalYRange: IntRange) : Phase(PhaseType.ENDGAME) {
 		return low..high
 	}
 
-	fun start(game: Game) {
-		UHCBorder.set(game.gameWorld, game.finalRadius)
+	fun start(activeGame: ActiveGame) {
+		UHCBorder.set(activeGame.gameWorld, activeGame.finalRadius)
 		Broadcast.broadcast { player ->
-			if (player.world === game.gameWorld) null
-			else Broadcast.game("Endgame starting")
+			if (player.world === activeGame.gameWorld) null
+			else MSG.game("Endgame starting")
+		}
+
+		val netherTeamGroups = activeGame.teams.teams.mapNotNull { team ->
+			val netherPlayersList = team.members.mapNotNull { playerData ->
+				if (!playerData.isActive) return@mapNotNull null
+				val block = playerData.getEntity()?.location?.block ?: return@mapNotNull null
+				if (block.world !== activeGame.netherWorld) return@mapNotNull null
+				playerData to block
+			}
+			val block = netherPlayersList.randomOrNull()?.second ?: return@mapNotNull null
+			netherPlayersList.map { (playerData) -> playerData } to block
+		}
+
+		netherTeamGroups.forEach { (playerDatas, fromBlock) ->
+			val exitBlock = PortalFix.getPortalExitLocation(activeGame.gameWorld, fromBlock)
+
+			PortalFix.buildNetherPortal(exitBlock, Axis.X)
+
+			playerDatas.forEach { playerData ->
+				playerData.executeAction { player ->
+					player.teleport(exitBlock.location.add(0.5, 0.0, 0.5))
+				}.onZombie { zombie ->
+					zombie.teleport(exitBlock.location.add(0.5, 0.0, 0.5))
+				}
+			}
+		}
+
+		activeGame.netherWorld.players.filter { it.gameMode === GameMode.SPECTATOR }.forEach { player ->
+			player.teleport(activeGame.gameWorld.spawnLocation)
 		}
 	}
 
-	fun tick(game: Game, phaseAlong: Game.PhaseAlong) {
+	fun tick(activeGame: ActiveGame, phaseAlong: ActiveGame.PhaseAlong) {
 		val oldYRange = this.currentYRange
 		val newYRange = getCurrentYRange(phaseAlong.along)
 
@@ -41,25 +74,25 @@ class EndgamePhase(val finalYRange: IntRange) : Phase(PhaseType.ENDGAME) {
 		val newDestroyHighs = newYRange.last + 1..oldYRange.last
 
 		newDestroyLows.forEach { y ->
-			buildBedrockLayer(game.gameWorld, game.finalRadius, y)
+			buildBedrockLayer(activeGame.gameWorld, activeGame.finalRadius, y)
 		}
 		newDestroyHighs.forEach { y ->
-			removeSkyLayer(game.gameWorld, game.finalRadius, y)
+			removeSkyLayer(activeGame.gameWorld, activeGame.finalRadius, y)
 		}
 
-		pushPlayersUp(game.gameWorld, game.finalRadius, newYRange.first)
+		pushPlayersUp(activeGame.gameWorld, activeGame.finalRadius, newYRange.first)
 
 		this.currentYRange = newYRange
 
 		val timers = warningTimers.get()
 
-		game.playerDatas.active.forEach { playerData ->
+		activeGame.playerDatas.active.forEach { playerData ->
 			val entity = playerData.getEntity() ?: return@forEach
 			val timer = timers.find { result -> result.timer.uuid == playerData.uuid }
 
 			if (
 				!(entity is Player && !PlayerManip.isSquishy(entity)) &&
-				entity.world === game.gameWorld &&
+				entity.world === activeGame.gameWorld &&
 				entity.y > newYRange.last
 			) {
 				if (timer == null) {

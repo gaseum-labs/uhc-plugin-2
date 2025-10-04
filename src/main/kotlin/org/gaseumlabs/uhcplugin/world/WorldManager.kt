@@ -5,6 +5,12 @@ import java.io.File
 import kotlin.random.Random
 
 object WorldManager {
+	private lateinit var lobbyWorld: World
+
+	fun init() {
+		lobbyWorld = Bukkit.getWorld("world") ?: throw Exception("World does not exist")
+	}
+
 	fun createWorld(uhcWorldType: UHCWorldType, seed: Long?, generateStructures: Boolean): World {
 		val world = Bukkit.getServer().createWorld(
 			WorldCreator(uhcWorldType.worldName)
@@ -17,12 +23,6 @@ object WorldManager {
 		initWorld(world)
 
 		return world
-	}
-
-	enum class UHCWorldType(val worldName: String, val environment: World.Environment) {
-		LOBBY("world", World.Environment.NORMAL),
-		GAME("game", World.Environment.NORMAL),
-		NETHER("game_nether", World.Environment.NETHER)
 	}
 
 	fun destroyWorld(uhcWorldType: UHCWorldType) {
@@ -43,4 +43,7 @@ object WorldManager {
 	fun getWorld(type: UHCWorldType): World {
 		return Bukkit.getWorld(type.worldName) ?: throw Exception("World does not exist")
 	}
+
+	val lobby: World
+		get() = lobbyWorld
 }

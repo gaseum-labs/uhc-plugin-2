@@ -2,9 +2,11 @@ package org.gaseumlabs.uhcplugin.core
 
 import org.bukkit.Location
 import org.bukkit.World
+import org.bukkit.WorldBorder
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.LivingEntity
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.core.phase.PhaseType
 import org.gaseumlabs.uhcplugin.util.MathUtil
 import kotlin.math.absoluteValue
@@ -29,24 +31,28 @@ object UHCBorder {
 		world.worldBorder.size = world.worldBorder.size
 	}
 
-	fun getCurrentRadius(game: Game): Int {
-		val phaseAlong = game.getPhaseAlong()
+	fun getCurrentRadius(activeGame: ActiveGame): Int {
+		val phaseAlong = activeGame.getPhaseAlong()
 
 		return when (phaseAlong.phase.type) {
-			PhaseType.GRACE -> game.initialRadius
+			PhaseType.GRACE -> activeGame.initialRadius
 			PhaseType.SHRINK -> MathUtil.lerp(
-				game.finalRadius.toDouble(),
-				game.initialRadius.toDouble(),
+				activeGame.finalRadius.toDouble(),
+				activeGame.initialRadius.toDouble(),
 				phaseAlong.along
 			).toInt()
 
-			PhaseType.ENDGAME -> game.finalRadius
+			PhaseType.ENDGAME -> activeGame.finalRadius
 		}
+	}
+
+	fun getBorderRadius(worldBorder: WorldBorder): Int {
+		return ceil((worldBorder.size - 1.0) / 2.0).toInt()
 	}
 
 	fun isOutsideBorder(location: Location): Boolean {
 		val world = location.world
-		val blockRadius = ceil((world.worldBorder.size - 1.0) / 2.0).toInt()
+		val blockRadius = getBorderRadius(world.worldBorder)
 		val block = location.block
 		return block.x.absoluteValue > blockRadius || block.z.absoluteValue > blockRadius
 	}

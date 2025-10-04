@@ -83,8 +83,8 @@ object OfflineZombie {
 	class Events : Listener {
 		@EventHandler
 		fun onKillEntity(event: EntityDeathEvent) {
-			val game = UHC.getGame() ?: return
-			val (playerData, zombie) = game.playerDatas.getByZombie(event.entity) ?: return
+			val activeGame = UHC.activeGame() ?: return
+			val (playerData, zombie) = activeGame.playerDatas.getByZombie(event.entity) ?: return
 
 			val (killerUuid, deathMessage) = Death.getKiller(
 				event.damageSource,
@@ -92,14 +92,14 @@ object OfflineZombie {
 				Death.offlineDeathMessage(Bukkit.getOfflinePlayer(playerData.uuid))
 			)
 
-			UHC.onPlayerDeath(game, playerData, zombie.location, killerUuid, deathMessage, false)
+			UHC.onPlayerDeath(activeGame, playerData, zombie.location, killerUuid, deathMessage, false)
 
 			event.droppedExp = zombie.persistentDataContainer.get(KEY_EXPERIENCE, PersistentDataType.INTEGER) ?: 0
 		}
 
 		@EventHandler
 		fun onMoveEntity(event: EntityMoveEvent) {
-			val game = UHC.getGame() ?: return
+			val game = UHC.activeGame() ?: return
 			val (_, zombie) = game.playerDatas.getByZombie(event.entity) ?: return
 
 			val newChunk = zombie.chunk
@@ -108,7 +108,7 @@ object OfflineZombie {
 
 		@EventHandler
 		fun onCombust(event: EntityCombustEvent) {
-			val game = UHC.getGame() ?: return
+			val game = UHC.activeGame() ?: return
 			val (_, zombie) = game.playerDatas.getByZombie(event.entity) ?: return
 
 			event.isCancelled = true;

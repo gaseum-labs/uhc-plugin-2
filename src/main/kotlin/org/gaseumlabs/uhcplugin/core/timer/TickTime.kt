@@ -14,4 +14,10 @@ object TickTime {
 
 		return "${if (minutes == 0) "" else "$minutes minute${if (minutes == 1) "" else "s"} "}$seconds second${if (seconds == 1) "" else "s"}"
 	}
+
+	fun regenerationHealth(health: Int): Int = health * 50
+	fun regeneration2Health(health: Int): Int = health * 25
+
+	fun poisonHealth(health: Int): Int = health * 25
+	fun poison2Health(health: Int): Int = health * 12
 }

@@ -12,25 +12,26 @@ import org.bukkit.OfflinePlayer
 import org.gaseumlabs.uhcplugin.core.PlayerManip
 import org.gaseumlabs.uhcplugin.core.UHC
 import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
+import org.gaseumlabs.uhcplugin.core.broadcast.MSG
 import org.gaseumlabs.uhcplugin.world.WorldManager
 
 object LobbyCommands {
 	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
 		uhcNode.then(
 			Commands.literal("ready")
-				.requires(CommandUtil::requiresPregame)
+				.requires(CommandUtil.makeRequires(RequiresFlag.PRE_GAME))
 				.executes(::execReady)
 		)
 
 		uhcNode.then(
 			Commands.literal("unready")
-				.requires(CommandUtil::requiresPregame)
+				.requires(CommandUtil.makeRequires(RequiresFlag.PRE_GAME))
 				.executes(::execUnready)
 		)
 
 		uhcNode.then(
 			Commands.literal("forceready")
-				.requires(CommandUtil::requiresPregameOp)
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.PRE_GAME))
 				.then(
 					CommandUtil.createPlayerArgument("player", "Force ready player")
 						.executes(::execForceReady)
@@ -39,7 +40,7 @@ object LobbyCommands {
 
 		uhcNode.then(
 			Commands.literal("forceunready")
-				.requires(CommandUtil::requiresPregameOp)
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.PRE_GAME))
 				.then(
 					CommandUtil.createPlayerArgument("player", "Force ready player")
 						.executes(::execForceUnready)
@@ -48,7 +49,7 @@ object LobbyCommands {
 
 		uhcNode.then(
 			Commands.literal("minreadyplayers")
-				.requires(CommandUtil::requiresPregameOp)
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.PRE_GAME))
 				.then(
 					Commands.literal("set").then(
 						Commands.argument("value", IntegerArgumentType.integer(1, 16))
@@ -59,7 +60,7 @@ object LobbyCommands {
 
 		uhcNode.then(
 			Commands.literal("readyall")
-				.requires(CommandUtil::requiresPregameOp)
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.PRE_GAME))
 				.executes(::execReadyAll)
 		)
 
@@ -72,22 +73,22 @@ object LobbyCommands {
 	private fun broadcastReady(player: OfflinePlayer) {
 		Broadcast.broadcast(
 			player,
-			Broadcast.success("You are now ready for the game"),
-			Broadcast.game("${player.name} is now ready")
+			MSG.success("You are now ready for the game"),
+			MSG.game("${player.name} is now ready")
 		)
 	}
 
 	private fun broadcastUnready(player: OfflinePlayer) {
 		Broadcast.broadcast(
 			player,
-			Broadcast.success("You are no longer ready for the game"),
-			Broadcast.game("${player.name} is no longer ready")
+			MSG.success("You are no longer ready for the game"),
+			MSG.game("${player.name} is no longer ready")
 		)
 	}
 
 	private fun execReady(context: CommandContext<CommandSourceStack>): Int {
 		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
-		val pregame = UHC.getPregame() ?: return CommandUtil.error(context, "Game has already started")
+		val pregame = UHC.preGame() ?: return CommandUtil.error(context, "Game has already started")
 
 		val isChanged = pregame.makePlayerReady(player.uniqueId)
 
@@ -102,7 +103,7 @@ object LobbyCommands {
 
 	private fun execUnready(context: CommandContext<CommandSourceStack>): Int {
 		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
-		val pregame = UHC.getPregame() ?: return CommandUtil.error(context, "Game has already started")
+		val pregame = UHC.preGame() ?: return CommandUtil.error(context, "Game has already started")
 
 		val success = pregame.makePlayerUnready(player.uniqueId)
 
@@ -118,7 +119,7 @@ object LobbyCommands {
 	private fun execForceReady(context: CommandContext<CommandSourceStack>): Int {
 		val forcePlayerName = context.getArgument("player", String::class.java)
 
-		val pregame = UHC.getPregame() ?: return CommandUtil.error(context, "Game has already started")
+		val pregame = UHC.preGame() ?: return CommandUtil.error(context, "Game has already started")
 
 		val forcePlayer = Bukkit.getOfflinePlayerIfCached(forcePlayerName)
 			?: return CommandUtil.error(context, "That player does not exist")
@@ -133,7 +134,7 @@ object LobbyCommands {
 	private fun execForceUnready(context: CommandContext<CommandSourceStack>): Int {
 		val forcePlayerName = context.getArgument("player", String::class.java)
 
-		val pregame = UHC.getPregame() ?: return CommandUtil.error(context, "Game has already started")
+		val pregame = UHC.preGame() ?: return CommandUtil.error(context, "Game has already started")
 
 		val forcePlayer = Bukkit.getOfflinePlayerIfCached(forcePlayerName)
 			?: return CommandUtil.error(context, "That player does not exist")
@@ -148,7 +149,7 @@ object LobbyCommands {
 	private fun execSetMinReadyPlayers(context: CommandContext<CommandSourceStack>): Int {
 		val value = context.getArgument("value", Int::class.java)
 
-		val pregame = UHC.getPregame() ?: return CommandUtil.error(context, "Game has already started")
+		val pregame = UHC.preGame() ?: return CommandUtil.error(context, "Game has already started")
 
 		pregame.minReadyPlayers = value
 
@@ -158,7 +159,7 @@ object LobbyCommands {
 	}
 
 	private fun execReadyAll(context: CommandContext<CommandSourceStack>): Int {
-		val pregame = UHC.getPregame() ?: return CommandUtil.error(context, "Game has already started")
+		val pregame = UHC.preGame() ?: return CommandUtil.error(context, "Game has already started")
 
 		Bukkit.getOnlinePlayers().forEach { player ->
 			if (pregame.makePlayerReady(player.uniqueId)) {
@@ -172,16 +173,15 @@ object LobbyCommands {
 	private fun execLobby(context: CommandContext<CommandSourceStack>): Int {
 		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
 
-		val game = UHC.getGame()
-		val playerData = game?.playerDatas?.get(player)
-
-		if (playerData != null && playerData.isActive) return CommandUtil.error(context, "You are currently playing!")
+		if (UHC.activeGame()?.playerDatas?.getActive(player) != null) {
+			return CommandUtil.error(context, "You are currently playing!")
+		}
 
 		PlayerManip.resetPlayer(
 			player,
 			GameMode.ADVENTURE,
 			20.0,
-			WorldManager.getWorld(WorldManager.UHCWorldType.LOBBY).spawnLocation
+			WorldManager.lobby.spawnLocation
 		)
 
 		return Command.SINGLE_SUCCESS

@@ -14,7 +14,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.gaseumlabs.uhcplugin.core.UHC
-import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
+import org.gaseumlabs.uhcplugin.core.broadcast.MSG
 import java.util.concurrent.CompletableFuture
 
 object CommandUtil {
@@ -28,21 +28,21 @@ object CommandUtil {
 
 	fun notPlayerError(context: CommandContext<CommandSourceStack>): Int {
 		context.source.sender.sendMessage(
-			Broadcast.error("This command can only be used by players")
+			MSG.error("This command can only be used by players")
 		)
 		return ERROR_CODE
 	}
 
 	fun error(context: CommandContext<CommandSourceStack>, message: String): Int {
 		context.source.sender.sendMessage(
-			Broadcast.error(message)
+			MSG.error(message)
 		)
 		return ERROR_CODE
 	}
 
 	fun successMessage(context: CommandContext<CommandSourceStack>, message: String) {
 		context.source.sender.sendMessage(
-			Broadcast.success(message)
+			MSG.success(message)
 		)
 	}
 
@@ -61,24 +61,18 @@ object CommandUtil {
 		}
 	}
 
-	fun requiresPregame(source: CommandSourceStack): Boolean {
-		return UHC.isPregame()
-	}
-
-	fun requiresPregameOp(source: CommandSourceStack): Boolean {
-		return source.sender.isOp && UHC.isPregame()
-	}
-
-	fun requiresGame(source: CommandSourceStack): Boolean {
-		return UHC.isGame()
-	}
-
-	fun requiresGameOp(source: CommandSourceStack): Boolean {
-		return source.sender.isOp && UHC.isGame()
-	}
-
-	fun requiresOp(source: CommandSourceStack): Boolean {
-		return source.sender.isOp
+	fun makeRequires(vararg flags: RequiresFlag): (source: CommandSourceStack) -> Boolean {
+		return { source ->
+			flags.all { flag ->
+				when (flag) {
+					RequiresFlag.OP -> source.sender.isOp
+					RequiresFlag.GAME -> UHC.game() != null
+					RequiresFlag.PRE_GAME -> UHC.preGame() != null
+					RequiresFlag.ACTIVE_GAME -> UHC.activeGame() != null
+					RequiresFlag.POST_GAME -> UHC.postGame() != null
+				}
+			}
+		}
 	}
 
 	fun createPlayerArgument(name: String, description: String): RequiredArgumentBuilder<CommandSourceStack, String> {
@@ -87,5 +81,11 @@ object CommandUtil {
 				Component.text(description, NamedTextColor.GREEN)
 			)
 		)
+	}
+
+	fun updatePlayers() {
+		Bukkit.getOnlinePlayers().forEach { player ->
+			player.updateCommands()
+		}
 	}
 }

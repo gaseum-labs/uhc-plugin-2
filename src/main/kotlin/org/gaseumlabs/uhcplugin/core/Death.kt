@@ -9,31 +9,31 @@ import org.bukkit.damage.DamageSource
 import org.bukkit.entity.ExperienceOrb
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
+import org.gaseumlabs.uhcplugin.core.broadcast.MSG
 import java.util.*
 
 object Death {
 	fun getSlainDeathMessage(killed: OfflinePlayer, killer: Player): Component {
-		return Broadcast.game(
+		return MSG.game(
 			"${killed.name ?: "An unknown player"} was slain by ${killer.name} using "
 		).append(getItemName(killer))
 	}
 
 	fun offlineDeathMessage(killed: OfflinePlayer): Component {
-		return Broadcast.game("${killed.name ?: "An unknown player"} died while offline")
+		return MSG.game("${killed.name ?: "An unknown player"} died while offline")
 	}
 
 	fun getUnknownDeathMessage(killed: OfflinePlayer): Component {
-		return Broadcast.game("${killed.name ?: "An unknown player"} died")
+		return MSG.game("${killed.name ?: "An unknown player"} died")
 	}
 
 	fun getForfeitDeathMessage(killed: OfflinePlayer): Component {
-		return Broadcast.game("${killed.name ?: "An unknown player"} gave up")
+		return MSG.game("${killed.name ?: "An unknown player"} gave up")
 	}
 
 	private fun getItemName(killer: Player): Component {
 		val item = killer.inventory.itemInMainHand
-		if (item.isEmpty) return Broadcast.game("their bare hands")
+		if (item.isEmpty) return MSG.game("their bare hands")
 		return item.effectiveName()
 	}
 

@@ -1,35 +1,42 @@
-package org.gaseumlabs.uhcplugin.core
+package org.gaseumlabs.uhcplugin.core.game
 
 import org.bukkit.World
+import org.gaseumlabs.uhcplugin.core.Ledger
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.core.phase.Grace
 import org.gaseumlabs.uhcplugin.core.phase.Phase
 import org.gaseumlabs.uhcplugin.core.phase.Shrink
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
+import org.gaseumlabs.uhcplugin.core.team.Teams
 import org.gaseumlabs.uhcplugin.core.timer.MultiTimerHolder
 import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
 import java.util.*
 
-class Game(
+class ActiveGame(
 	val playerDatas: PlayerDatas,
 	val gracePhase: Grace,
 	val shrinkPhase: Shrink,
 	val endgamePhase: EndgamePhase,
 	val initialRadius: Int,
 	val finalRadius: Int,
-	val gameWorld: World,
-	val netherWorld: World,
-) {
+	gameWorld: World,
+	netherWorld: World,
+	val teams: Teams,
+) : Game(gameWorld, netherWorld) {
 	val ledger = Ledger()
 	val playerRespawnTimers = MultiTimerHolder<RespawnTimer>()
 	val startDate = Date()
 	var timer: Int = 0
-	var isDone: Boolean = false
 
-	fun postTick() {
-		if (isDone) return
+	override fun destroy() {
+		super.destroy()
+		teams.clearTeams()
+	}
+
+	override fun postTick() {
 		++timer
 		playerRespawnTimers.postTick()
+		endgamePhase.warningTimers.postTick()
 	}
 
 	fun getPhase(): Phase {
@@ -57,11 +64,14 @@ class Game(
 		}
 	}
 
+	val SHRINK_START_TIME = gracePhase.duration
+	val ENDGAME_START_TIME = gracePhase.duration + shrinkPhase.duration
+
 	fun isShrinkStarting(): Boolean {
-		return timer == gracePhase.duration
+		return timer == SHRINK_START_TIME
 	}
 
 	fun isEndgameStarting(): Boolean {
-		return timer == gracePhase.duration + shrinkPhase.duration
+		return timer == ENDGAME_START_TIME
 	}
 }

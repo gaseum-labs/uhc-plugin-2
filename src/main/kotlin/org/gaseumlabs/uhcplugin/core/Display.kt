@@ -8,7 +8,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerQuitEvent
-import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
+import org.gaseumlabs.uhcplugin.core.broadcast.MSG
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.core.phase.PhaseType
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
@@ -24,29 +24,32 @@ object Display {
 		val color: BossBar.Color,
 		val overlay: BossBar.Overlay,
 		val title: Title?,
+		val actionBar: Component?,
 	) {
 		fun floatProgress() = progress.toFloat().coerceIn(0.0f, 1.0f)
 	}
 
 	private fun getForPlayer(player: Player): DisplayTemplate? {
-		if (player.world === WorldManager.getWorld(WorldManager.UHCWorldType.LOBBY)) {
-			val pregame = UHC.getPregame()
-			val startGameTimer = UHC.startGameTimer.get()
+		if (player.world === WorldManager.lobby) {
+			val preGame = UHC.preGame()
+			val startGameTimer = preGame?.startGameTimer?.get()
 
-			return if (pregame == null) {
+			return if (preGame == null) {
 				DisplayTemplate(
 					Component.text("UHC Lobby - Game in progress"),
 					1.0,
 					BossBar.Color.WHITE,
 					BossBar.Overlay.PROGRESS,
+					null,
 					null
 				)
 			} else if (startGameTimer == null) {
 				DisplayTemplate(
-					Component.text("UHC Lobby - ${pregame.numReadyPlayers()} out of ${pregame.minReadyPlayers} players ready"),
-					pregame.numReadyPlayers() / pregame.minReadyPlayers.toDouble(),
+					Component.text("UHC Lobby - ${preGame.numReadyPlayers()} out of ${preGame.minReadyPlayers} players ready"),
+					preGame.numReadyPlayers() / preGame.minReadyPlayers.toDouble(),
 					BossBar.Color.WHITE,
 					BossBar.Overlay.PROGRESS,
+					null,
 					null
 				)
 			} else {
@@ -55,12 +58,13 @@ object Display {
 					1.0 - startGameTimer.along(),
 					BossBar.Color.WHITE,
 					BossBar.Overlay.PROGRESS,
+					null,
 					null
 				)
 			}
 		}
 
-		val game = UHC.getGame() ?: return null
+		val game = UHC.activeGame() ?: return null
 
 		val phaseAlong = game.getPhaseAlong()
 		val phaseType = phaseAlong.phase.type
@@ -76,6 +80,7 @@ object Display {
 				respawnTimerResult.along(),
 				BossBar.Color.WHITE,
 				BossBar.Overlay.NOTCHED_12,
+				null,
 				null
 			)
 		}
@@ -89,6 +94,7 @@ object Display {
 				phaseAlong.along,
 				phaseType.barColor,
 				BossBar.Overlay.NOTCHED_20,
+				null,
 				null
 			)
 
@@ -104,6 +110,7 @@ object Display {
 				phaseAlong.along,
 				phaseType.barColor,
 				BossBar.Overlay.NOTCHED_20,
+				null,
 				null
 			)
 
@@ -117,17 +124,19 @@ object Display {
 					1.0,
 					phaseType.barColor,
 					BossBar.Overlay.NOTCHED_6,
+					null,
 					null
 				)
 
 				val showTitle = timer.ticks % 20 == 0
 
 				DisplayTemplate(
-					Broadcast.error("Return to y level ${endgame.currentYRange.last} or take damage!"),
+					MSG.error("Return to y level ${endgame.currentYRange.last} or take damage!"),
 					MathUtil.invLerp(0, EndgamePhase.DAMAGE_TIME, timer.ticks),
 					BossBar.Color.RED,
 					BossBar.Overlay.PROGRESS,
-					if (showTitle) Title.title(Component.empty(), Broadcast.error("TOO HIGH!"), 0, 0, 20) else null
+					if (showTitle) Title.title(Component.empty(), MSG.error("TOO HIGH!"), 0, 0, 20) else null,
+					null
 				)
 			}
 		}

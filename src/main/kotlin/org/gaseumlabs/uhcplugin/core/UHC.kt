@@ -5,10 +5,11 @@ import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.GameRule
 import org.bukkit.Location
-import org.bukkit.entity.Player
 import org.gaseumlabs.uhcplugin.UHCPlugin
 import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
 import org.gaseumlabs.uhcplugin.core.broadcast.MSG
+import org.gaseumlabs.uhcplugin.core.command.CommandUtil
+import org.gaseumlabs.uhcplugin.core.game.*
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.core.phase.Grace
 import org.gaseumlabs.uhcplugin.core.phase.Shrink
@@ -16,100 +17,85 @@ import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
-import org.gaseumlabs.uhcplugin.core.team.Teams
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
-import org.gaseumlabs.uhcplugin.core.timer.*
-import org.gaseumlabs.uhcplugin.core.timer.Timer
+import org.gaseumlabs.uhcplugin.core.timer.CountdownTimer
+import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
+import org.gaseumlabs.uhcplugin.core.timer.TickTime
 import org.gaseumlabs.uhcplugin.fix.BorderFix
 import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
 import org.gaseumlabs.uhcplugin.world.Seed
+import org.gaseumlabs.uhcplugin.world.UHCWorldType
 import org.gaseumlabs.uhcplugin.world.WorldManager
 import java.util.*
 
 object UHC {
-	private var game: Game? = null
-	private var pregame: Pregame = Pregame.create()
-
-	val startGameTimer = SingleTimerHolder<Timer>()
+	private var stage: Stage = PreGame.createFresh()
 
 	val RESPAWN_TIME = TickTime.ofSeconds(15)
 
 	fun init() {
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(UHCPlugin.self, UHC::tick, 0, 1)
-		Bukkit.setDefaultGameMode(GameMode.ADVENTURE)
 	}
 
 	fun tick() {
-		val game = game
-
-		if (game != null && !game.isDone) gameTick(game)
-		if (game == null) lobbyTick(pregame)
+		when (val game = stage) {
+			is PreGame -> lobbyTick(game)
+			is ActiveGame -> activeGameTick(game)
+			is PostGame -> {}
+		}
 
 		Display.tick()
-
-		game?.postTick()
-		startGameTimer.postTick()
-		game?.endgamePhase?.warningTimers?.postTick()
+		stage.postTick()
 	}
 
-	fun lobbyTick(pregame: Pregame) {
-		val numReadyPlayers = pregame.numReadyPlayers()
+	fun lobbyTick(preGame: PreGame) {
+		val numReadyPlayers = preGame.numReadyPlayers()
 
-		val result = startGameTimer.get()
+		val result = preGame.startGameTimer.get()
 		if (result == null) {
-			if (numReadyPlayers >= pregame.minReadyPlayers) {
-				startGameTimer.set(CountdownTimer(TickTime.ofSeconds(10)))
+			if (numReadyPlayers >= preGame.minReadyPlayers) {
+				preGame.startGameTimer.set(CountdownTimer(TickTime.ofSeconds(10)))
 				Broadcast.broadcast(MSG.game("Game starting in 2 minutes"))
 			}
 		} else {
 			if (result.isDone()) {
-				startGame(pregame)
-			} else if (numReadyPlayers < pregame.minReadyPlayers) {
-				startGameTimer.cancel()
+				preGameToActiveGame(preGame)
+			} else if (numReadyPlayers < preGame.minReadyPlayers) {
+				preGame.startGameTimer.cancel()
 				Broadcast.broadcast(MSG.game("Game cancelled because not enough players are ready"))
 			}
 		}
 	}
 
-	fun destroyGame() {
-		val game = game ?: return;
-
+	fun gameToPreGame(game: Game) {
 		moveAllToLobby(game)
+		game.destroy()
 
-		WorldManager.destroyWorld(WorldManager.UHCWorldType.GAME)
-		WorldManager.destroyWorld(WorldManager.UHCWorldType.NETHER)
+		this.stage = PreGame.createFresh()
 
-		this.game = null
-	}
-
-	fun moveToLobby(player: Player) {
-		val lobbyWorld = WorldManager.getWorld(WorldManager.UHCWorldType.LOBBY)
-		PlayerManip.resetPlayer(player, GameMode.ADVENTURE, 20.0, lobbyWorld.spawnLocation)
+		CommandUtil.updatePlayers()
 	}
 
 	fun moveAllToLobby(game: Game) {
-		val lobbyWorld = WorldManager.getWorld(WorldManager.UHCWorldType.LOBBY)
 		Bukkit.getOnlinePlayers().forEach { player ->
 			if (player.world === game.gameWorld || player.world === game.netherWorld) {
-				PlayerManip.resetPlayer(player, GameMode.ADVENTURE, 20.0, lobbyWorld.spawnLocation)
+				PlayerManip.resetPlayer(player, GameMode.ADVENTURE, 20.0, WorldManager.lobby.spawnLocation)
 			}
 		}
 	}
 
-	fun startGame(pregame: Pregame) {
-		if (Teams.teams.isEmpty()) {
-			Teams.setRandomTeams(UHC.pregame.readyPlayers.toList(), 2)
+	fun preGameToActiveGame(preGame: PreGame) {
+		if (preGame.teams.teams.isEmpty()) {
+			preGame.teams.setRandomTeams(preGame.readyPlayers.toList(), 2)
 		}
 
-		destroyGame()
+		val gameWorld = WorldManager.createWorld(UHCWorldType.GAME, Seed.goodSeedList.random(), true)
+		val netherWorld = WorldManager.createWorld(UHCWorldType.NETHER, null, true)
 
-		val gameWorld = WorldManager.createWorld(WorldManager.UHCWorldType.GAME, Seed.goodSeedList.random(), true)
-		val netherWorld = WorldManager.createWorld(WorldManager.UHCWorldType.NETHER, null, true)
+		val borderRadius = PreGame.INITIAL_RADIUS
+		val finalRadius = PreGame.ENDGAME_RADIUS
 
-		val borderRadius = pregame.getInitialRadius()
-		val finalRadius = pregame.getEndgameRadius()
-
-		val finalYRange = EndgamePhase.getFinalYRange(gameWorld, finalRadius, pregame.gameConfig.finalYLevels)
+		val finalYRange = EndgamePhase.getFinalYRange(gameWorld, finalRadius, preGame.gameConfig.finalYLevels)
 
 		UHCBorder.set(gameWorld, borderRadius)
 		UHCBorder.set(netherWorld, borderRadius)
@@ -123,33 +109,34 @@ object UHC {
 
 		gameWorld.pvp = false
 
-		pregame.playerUUIDToLocation = PlayerSpreader.getPlayerLocations(
+		preGame.playerUUIDToLocation = PlayerSpreader.getPlayerLocations(
 			gameWorld,
 			PlayerSpreader.CONFIG_DEFAULT,
 			borderRadius,
-			Teams.teams.map { team -> team.memberUUIDs }
+			preGame.teams.teams.map { team -> team.memberUUIDs }
 		)
 
-		val playerDatas = PlayerDatas.create(pregame.playerUUIDToLocation.map { (uuid) ->
+		val playerDatas = PlayerDatas.create(preGame.playerUUIDToLocation.map { (uuid) ->
 			PlayerData.createInitial(
 				uuid,
-				Teams.teams.find { team -> team.memberUUIDs.contains(uuid) }
+				preGame.teams.teams.find { team -> team.memberUUIDs.contains(uuid) }
 					?: throw Exception("could not find team for $uuid"))
 		})
 
-		val game = Game(
+		val activeGame = ActiveGame(
 			playerDatas = playerDatas,
-			gracePhase = Grace(pregame.gameConfig.graceDuration),
-			shrinkPhase = Shrink(pregame.gameConfig.shrinkDuration),
+			gracePhase = Grace(preGame.gameConfig.graceDuration),
+			shrinkPhase = Shrink(preGame.gameConfig.shrinkDuration),
 			endgamePhase = EndgamePhase(finalYRange),
 			borderRadius,
 			finalRadius,
 			gameWorld,
 			netherWorld,
+			preGame.teams
 		)
 
-		game.playerDatas.active.forEach { playerData ->
-			val location = pregame.playerUUIDToLocation.get(playerData.uuid)!!
+		activeGame.playerDatas.active.forEach { playerData ->
+			val location = preGame.playerUUIDToLocation.get(playerData.uuid)!!
 
 			playerData.executeAction { player ->
 				PlayerManip.resetPlayer(
@@ -170,28 +157,26 @@ object UHC {
 
 		PlayerAdvancement.wipe(Bukkit.getOnlinePlayers())
 
-		this.pregame = Pregame.create()
-		this.game = game
+		this.stage = activeGame
 
-		Bukkit.getOnlinePlayers().forEach { player ->
-			player.updateCommands()
-		}
+		CommandUtil.updatePlayers()
 	}
 
-	fun gameTick(game: Game) {
-		game.playerRespawnTimers.get().forEach { result ->
+	fun activeGameTick(activeGame: ActiveGame) {
+		activeGame.playerRespawnTimers.get().forEach { result ->
 			if (result.isDone()) {
-				val playerData = game.playerDatas.get(result.timer.uuid) ?: return@forEach
+				val playerData = activeGame.playerDatas.get(result.timer.uuid) ?: return@forEach
 
 				val respawnLocation = PlayerSpreader.getSingleLocation(
+					activeGame,
 					playerData.uuid,
-					game.gameWorld,
-					UHCBorder.getCurrentRadius(game),
+					activeGame.gameWorld,
+					UHCBorder.getCurrentRadius(activeGame),
 					PlayerSpreader.CONFIG_DEFAULT
 				)
 
 				if (respawnLocation == null) {
-					game.playerRespawnTimers.add(RespawnTimer(playerData.uuid, 1))
+					activeGame.playerRespawnTimers.add(RespawnTimer(playerData.uuid, 1))
 				} else {
 					playerData.executeAction { player ->
 						player.isGlowing
@@ -216,53 +201,64 @@ object UHC {
 			}
 		}
 
-		if (game.isShrinkStarting()) {
-			game.shrinkPhase.start(game)
+		if (activeGame.isShrinkStarting()) {
+			activeGame.shrinkPhase.start(activeGame)
 		}
-		if (game.isEndgameStarting()) {
-			game.endgamePhase.start(game)
+		if (activeGame.isEndgameStarting()) {
+			activeGame.endgamePhase.start(activeGame)
 		}
 
-		val phaseAlong = game.getPhaseAlong()
+		val phaseAlong = activeGame.getPhaseAlong()
 		val phase = phaseAlong.phase
 		if (phase is EndgamePhase) {
-			game.endgamePhase.tick(game, phaseAlong)
+			activeGame.endgamePhase.tick(activeGame, phaseAlong)
 		}
 
-		BorderFix.tick(game)
+		BorderFix.tick(activeGame)
 	}
 
-	fun endGame(game: Game) {
-		game.isDone = true
-		UHCBorder.stop(game.gameWorld)
-		game.gameWorld.pvp = false
-		game.gameWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
-		game.gameWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false)
-		game.gameWorld.setGameRule(GameRule.RANDOM_TICK_SPEED, 0)
-		game.gameWorld.setGameRule(GameRule.DO_FIRE_TICK, false)
-
-		pregame = Pregame.create()
+	fun activeGameToPostGame(activeGame: ActiveGame, winningTeam: UHCTeam?) {
+		UHCBorder.stop(activeGame.gameWorld)
+		activeGame.gameWorld.pvp = false
+		activeGame.gameWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
+		activeGame.gameWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false)
+		activeGame.gameWorld.setGameRule(GameRule.RANDOM_TICK_SPEED, 0)
+		activeGame.gameWorld.setGameRule(GameRule.DO_FIRE_TICK, false)
 
 		Bukkit.getOnlinePlayers().forEach { player ->
 			player.updateCommands()
 		}
+
+		val summary = Summary.create(
+			activeGame.startDate,
+			activeGame.ledger,
+			activeGame.teams.teams,
+			winningTeam,
+			activeGame.timer
+		)
+
+		activeGame.teams.clearTeams()
+
+		this.stage = PostGame(summary, activeGame.gameWorld, activeGame.netherWorld)
+
+		CommandUtil.updatePlayers()
 	}
 
-	fun getGame(): Game? = game
-	fun getActiveGame(): Game? = if (game == null || game?.isDone == true) null else game
-	fun getPregame(): Pregame? = if (game == null || game?.isDone == true) pregame else null
-	fun isPregame(): Boolean = getPregame() != null
-	fun isGame(): Boolean = game != null
+	fun preGame(): PreGame? = stage as? PreGame
+	fun activeGame(): ActiveGame? = stage as? ActiveGame
+	fun postGame(): PostGame? = stage as? PostGame
+	fun stage(): Stage = stage
+	fun game(): Game? = stage as? Game
 
 	fun onPlayerDeath(
-		game: Game,
+		activeGame: ActiveGame,
 		playerData: PlayerData,
 		deathLocation: Location,
 		killerUuid: UUID?,
 		deathMessage: Component,
 		forcePermanent: Boolean,
 	) {
-		val phase = game.getPhase().type
+		val phase = activeGame.getPhase().type
 
 		if (phase.deathCounts || forcePermanent) playerData.numDeaths += 1
 
@@ -273,7 +269,7 @@ object UHC {
 		}
 
 		val isElimination = if (!forcePermanent && playerData.canRespawn() && phase.canRespawn) {
-			game.playerRespawnTimers.add(RespawnTimer(playerData.uuid, RESPAWN_TIME))
+			activeGame.playerRespawnTimers.add(RespawnTimer(playerData.uuid, RESPAWN_TIME))
 			false
 		} else {
 			playerData.isActive = false
@@ -282,66 +278,46 @@ object UHC {
 
 		if (!isElimination) return
 
+		val isTeamKill = killerUuid?.let { activeGame.playerDatas.get(it)?.team } === playerData.team
+		activeGame.ledger.kills.add(LedgerKill(activeGame.timer, playerData.uuid, if (isTeamKill) null else killerUuid))
 
-		game.ledger.kills.add(LedgerKill(game.timer, playerData.uuid, killerUuid))
+		Broadcast.broadcastGame(activeGame, deathMessage)
 
-		//TODO cleanup
-		//TODO use onPlayerEliminate
-		val remainingPlayers = game.playerDatas.active.size
-
-		Broadcast.broadcastGame(game, deathMessage)
-
-		val deathPlayer = Bukkit.getOfflinePlayer(playerData.uuid)
-
-		if (remainingPlayers == 0) {
-			Broadcast.broadcastGame(game, MSG.game("No one wins?"))
-			endGame(game)
-		} else if (remainingPlayers == 1) {
-
-		} else {
-			if (isElimination) Broadcast.broadcastGame(
-				game,
-				MSG.game("${deathPlayer.name ?: "An unknown player"} eliminated, $remainingPlayers players remain")
-			)
-		}
+		onPlayerEliminate(activeGame, playerData)
 	}
 
 	private fun onPlayerEliminate(
-		game: Game,
+		activeGame: ActiveGame,
 		playerData: PlayerData,
 	) {
 		playerData.isActive = false
 
 		val playerTeam = playerData.team
 
-		val activeTeams = getActiveTeams(game)
+		val activeTeams = getActiveTeams(activeGame)
 
 		val isTeamElimination = activeTeams.none { team -> team === playerTeam }
 
-		//TODO create summary class on game complete
-		//TODO move ledger kill logic into here
-		//TODO finish branches
-		//TODO don't add kill credit on teamkill
-		//TODO make a PostGame class that takes over from game when it's done
 		if (isTeamElimination) {
 			when (activeTeams.size) {
 				0 -> {
-
+					Broadcast.broadcastGame(activeGame, MSG.game("No one wins?"))
+					activeGameToPostGame(activeGame, null)
 				}
 
 				1 -> {
 					val winningTeam = activeTeams.first()
 
 					Broadcast.broadcastGame(
-						game,
+						activeGame,
 						MSG.game("Team ").append(winningTeam.nameComponent()).append(MSG.game(" wins!"))
 					)
-					endGame(game)
+					activeGameToPostGame(activeGame, winningTeam)
 				}
 
 				else -> {
 					Broadcast.broadcastGame(
-						game,
+						activeGame,
 						MSG.game("Team ").append(playerTeam.nameComponent())
 							.append(MSG.game(" has been eliminated!")),
 						MSG.gameBold("${activeTeams.size}").append(MSG.game(" teams remain"))
@@ -351,7 +327,7 @@ object UHC {
 		}
 	}
 
-	private fun getActiveTeams(game: Game): List<UHCTeam> {
-		return Teams.teams.filter { team -> team.members.any { it.isActive } }
+	private fun getActiveTeams(activeGame: ActiveGame): List<UHCTeam> {
+		return activeGame.teams.teams.filter { team -> team.members.any { it.isActive } }
 	}
 }

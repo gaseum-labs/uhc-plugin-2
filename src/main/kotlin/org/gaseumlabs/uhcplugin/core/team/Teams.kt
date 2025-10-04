@@ -4,16 +4,16 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.LivingEntity
 import org.bukkit.scoreboard.Team
-import org.gaseumlabs.uhcplugin.core.Game
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import java.util.*
 import kotlin.math.ceil
 
-object Teams {
+class Teams {
 	private val list = ArrayList<UHCTeam>()
 
 	val teams: List<UHCTeam>
 		get() = list
-	
+
 	fun clearTeams() {
 		list.forEach { uhcTeam ->
 			uhcTeam.team.unregister()
@@ -66,18 +66,18 @@ object Teams {
 
 	data class TeamInNeedResult(val team: UHCTeam, val memberEntity: LivingEntity?)
 
-	fun findTeamInNeedOr(game: Game, onNewTeam: () -> UHCTeam): TeamInNeedResult {
+	fun findTeamInNeedOr(activeGame: ActiveGame, onNewTeam: () -> UHCTeam): TeamInNeedResult {
 		val maxTeamSize = list.maxOfOrNull { team -> team.size } ?: return TeamInNeedResult(onNewTeam(), null)
 		for (team in list) {
 			if (team.size == maxTeamSize) continue
-			return TeamInNeedResult(team, getSpawnBuddy(game, team))
+			return TeamInNeedResult(team, getSpawnBuddy(activeGame, team))
 		}
 		return TeamInNeedResult(onNewTeam(), null)
 	}
 
-	fun getSpawnBuddy(game: Game, team: UHCTeam): LivingEntity? {
+	fun getSpawnBuddy(activeGame: ActiveGame, team: UHCTeam): LivingEntity? {
 		val activeMembers = team.memberUUIDs.map { uuid ->
-			game.playerDatas.getActive(uuid)
+			activeGame.playerDatas.getActive(uuid)
 		}
 
 		return activeMembers.firstOrNull()?.getEntity()

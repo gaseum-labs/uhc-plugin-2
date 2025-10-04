@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
-import org.gaseumlabs.uhcplugin.core.Game
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 
 object Broadcast {
 	fun broadcast(playerToMessage: (Player) -> Component?) {
@@ -26,11 +26,11 @@ object Broadcast {
 		}
 	}
 
-	fun broadcastGame(game: Game, vararg messages: Component) {
-		game.gameWorld.players.forEach { player ->
+	fun broadcastGame(activeGame: ActiveGame, vararg messages: Component) {
+		activeGame.gameWorld.players.forEach { player ->
 			messages.forEach { player.sendMessage(it) }
 		}
-		game.netherWorld.players.forEach { player ->
+		activeGame.netherWorld.players.forEach { player ->
 			messages.forEach { player.sendMessage(it) }
 		}
 	}

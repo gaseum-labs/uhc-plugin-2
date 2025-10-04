@@ -31,9 +31,9 @@ data class SummaryPlayer(
  *
  */
 
-class Summary(val players: ArrayList<SummaryPlayer>) {
+class Summary private constructor(val startDate: Date, val players: ArrayList<SummaryPlayer>) {
 	companion object {
-		fun create(ledger: Ledger, teams: List<UHCTeam>, winningTeam: UHCTeam, ticks: Int): Summary {
+		fun create(startDate: Date, ledger: Ledger, teams: List<UHCTeam>, winningTeam: UHCTeam?, ticks: Int): Summary {
 			val allPlayers = teams.flatMap { team -> team.members }
 			val numPlayers = allPlayers.size
 
@@ -42,7 +42,7 @@ class Summary(val players: ArrayList<SummaryPlayer>) {
 				if (deathIndex == -1) 99999999 else deathIndex
 			}
 
-			val teamsBySurvivalOrder = teams.sortedByDescending { team ->
+			val teamsBySurvivalOrder = teams.sortedBy { team ->
 				team.members.minOf { playerData -> playersBySurvivalOrder.indexOf(playerData) }
 			}
 
@@ -75,7 +75,7 @@ class Summary(val players: ArrayList<SummaryPlayer>) {
 				)
 			} as ArrayList<SummaryPlayer>
 
-			return Summary(players)
+			return Summary(startDate, players)
 		}
 	}
 }

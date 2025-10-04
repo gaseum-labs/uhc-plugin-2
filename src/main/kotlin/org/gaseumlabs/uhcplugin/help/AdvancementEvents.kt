@@ -5,14 +5,14 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerTeleportEvent
-import org.gaseumlabs.uhcplugin.core.Game
 import org.gaseumlabs.uhcplugin.core.UHC
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 
 class AdvancementEvents : Listener {
-	private fun getPlayerData(player: Player): Pair<Game, PlayerData>? {
-		val game = UHC.getGame() ?: return null
-		return game to (game.playerDatas.get(player) ?: return null)
+	private fun getPlayerData(player: Player): Pair<ActiveGame, PlayerData>? {
+		val activeGame = UHC.activeGame() ?: return null
+		return activeGame to (activeGame.playerDatas.get(player) ?: return null)
 	}
 
 	@EventHandler

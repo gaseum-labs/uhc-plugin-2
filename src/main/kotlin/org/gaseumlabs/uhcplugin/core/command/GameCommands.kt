@@ -9,45 +9,74 @@ import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.LivingEntity
 import org.gaseumlabs.uhcplugin.core.*
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
+import org.gaseumlabs.uhcplugin.core.game.PostGame
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
-import org.gaseumlabs.uhcplugin.core.team.Teams
 
 object GameCommands {
 	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
-		val uhcNode = Commands.literal("uhc")
-
-		uhcNode.then(
-			Commands.literal("reset")
-				.requires(CommandUtil::requiresPregameOp)
-				.executes(::execReset)
-		)
-
 		uhcNode.then(
 			Commands.literal("spectate")
-				.requires(CommandUtil::requiresGame)
+				.requires(CommandUtil.makeRequires(RequiresFlag.GAME))
 				.executes(::execSpectate)
 		)
 
 		uhcNode.then(
 			Commands.literal("forfeit")
-				.requires(CommandUtil::requiresGame)
+				.requires(CommandUtil.makeRequires(RequiresFlag.ACTIVE_GAME))
 				.executes(::execForfeit)
 		)
 
 		uhcNode.then(
+			Commands.literal("reset")
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.GAME))
+				.executes(::execReset)
+		)
+
+		uhcNode.then(
+			Commands.literal("end")
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.ACTIVE_GAME))
+				.executes(::execEnd)
+		)
+
+		uhcNode.then(
 			Commands.literal("addlate")
-				.requires(CommandUtil::requiresGameOp)
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.ACTIVE_GAME))
 				.then(
 					CommandUtil.createPlayerArgument("player", "Add late player")
 						.executes(::execAddLate)
 				)
 		)
+
+		uhcNode.then(
+			Commands.literal("phase")
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.ACTIVE_GAME))
+				.then(
+					Commands.literal("start").then(
+						Commands.literal("shrink").executes(::execPhaseStartShrink)
+					).then(
+						Commands.literal("endgame").executes(::execPhaseStartEndgame)
+					)
+				)
+		)
 	}
 
 	fun execReset(context: CommandContext<CommandSourceStack>): Int {
-		UHC.destroyGame()
+		val game = UHC.game() ?: return CommandUtil.error(context, "Game is not going")
+
+		UHC.gameToPreGame(game)
+
+		CommandUtil.successMessage(context, "Game reset")
+
+		return Command.SINGLE_SUCCESS
+	}
+
+	fun execEnd(context: CommandContext<CommandSourceStack>): Int {
+		val activeGame = UHC.activeGame() ?: return CommandUtil.error(context, "Game is not going")
+
+		UHC.activeGameToPostGame(activeGame, null)
 
 		CommandUtil.successMessage(context, "Game reset")
 
@@ -56,14 +85,23 @@ object GameCommands {
 
 	fun execSpectate(context: CommandContext<CommandSourceStack>): Int {
 		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
-		val game = UHC.getGame() ?: return CommandUtil.error(context, "No ongoing game")
+		val game = UHC.game() ?: return CommandUtil.error(context, "No ongoing game")
 
-		val playerData = game.playerDatas.get(player)
-		if (playerData?.isActive == true) return CommandUtil.error(context, "You are still playing")
+		val location = when (game) {
+			is ActiveGame -> {
+				if (game.playerDatas.getActive(player) != null)
+					return CommandUtil.error(context, "You are still playing")
 
-		val randomPlayerData = game.playerDatas.active.random()
-		val location = randomPlayerData.getEntity()?.location ?: randomPlayerData.offlineRecord.spectateLocation
-		?: game.gameWorld.spawnLocation
+				game.playerDatas.active.map { playerData ->
+					playerData.getEntity()?.location ?: playerData.offlineRecord.spectateLocation
+				}.randomOrNull() ?: game.gameWorld.spawnLocation
+			}
+
+			is PostGame -> {
+				game.gameWorld.players.filter { player -> player.gameMode !== GameMode.SPECTATOR }
+					.randomOrNull()?.location ?: game.gameWorld.spawnLocation
+			}
+		}
 
 		PlayerManip.makeSpectator(player, location)
 
@@ -72,20 +110,19 @@ object GameCommands {
 
 	fun execForfeit(context: CommandContext<CommandSourceStack>): Int {
 		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
-		val game = UHC.getGame() ?: return CommandUtil.error(context, "No ongoing game")
+		val activeGame = UHC.activeGame() ?: return CommandUtil.error(context, "No ongoing game")
 
-		val playerData = game.playerDatas.getActive(player)
+		val playerData = activeGame.playerDatas.getActive(player)
 			?: return CommandUtil.error(context, "You are not in the game")
 
-		UHC.onPlayerDeath(game, playerData, player.location, null, Death.getForfeitDeathMessage(player), true)
-
+		UHC.onPlayerDeath(activeGame, playerData, player.location, null, Death.getForfeitDeathMessage(player), true)
 		Death.dropPlayer(player)
 
 		return Command.SINGLE_SUCCESS
 	}
 
 	fun execAddLate(context: CommandContext<CommandSourceStack>): Int {
-		val game = UHC.getActiveGame() ?: return CommandUtil.error(context, "No ongoing game")
+		val activeGame = UHC.activeGame() ?: return CommandUtil.error(context, "No ongoing game")
 		val playerName = context.getArgument("player", String::class.java)
 
 		val player = Bukkit.getOfflinePlayerIfCached(playerName) ?: return CommandUtil.error(
@@ -93,15 +130,17 @@ object GameCommands {
 			"The player does not exist"
 		)
 
-		val existingPlayerData = game.playerDatas.get(player)
+		val existingPlayerData = activeGame.playerDatas.get(player)
 
 		data class AddLateResult(val playerData: PlayerData, val spawnBuddy: LivingEntity?)
 
 		val (playerData, spawnBuddy) = when {
 			existingPlayerData == null -> {
-				val (team, spawnBuddy) = Teams.findTeamInNeedOr(game) { Teams.addTeam(listOf(player.uniqueId)) }
+				val (team, spawnBuddy) = activeGame.teams.findTeamInNeedOr(activeGame) {
+					activeGame.teams.addTeam(listOf(player.uniqueId))
+				}
 				AddLateResult(
-					game.playerDatas.add(PlayerData.createInitial(player.uniqueId, team)),
+					activeGame.playerDatas.add(PlayerData.createInitial(player.uniqueId, team)),
 					spawnBuddy,
 				)
 			}
@@ -109,7 +148,7 @@ object GameCommands {
 			!existingPlayerData.isActive -> {
 				AddLateResult(
 					existingPlayerData,
-					Teams.getSpawnBuddy(game, existingPlayerData.team)
+					activeGame.teams.getSpawnBuddy(activeGame, existingPlayerData.team)
 				)
 			}
 
@@ -121,11 +160,12 @@ object GameCommands {
 		playerData.reset()
 
 		val location = spawnBuddy?.location ?: PlayerSpreader.getSingleLocation(
+			activeGame,
 			player.uniqueId,
-			game.gameWorld,
-			UHCBorder.getCurrentRadius(game),
+			activeGame.gameWorld,
+			UHCBorder.getCurrentRadius(activeGame),
 			PlayerSpreader.CONFIG_DEFAULT
-		) ?: game.gameWorld.spawnLocation
+		) ?: activeGame.gameWorld.spawnLocation
 
 		playerData.executeAction { player ->
 			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, playerData.getMaxHealth(), location)
@@ -137,6 +177,26 @@ object GameCommands {
 		}
 
 		CommandUtil.successMessage(context, "${player.name} added late to the game")
+
+		return Command.SINGLE_SUCCESS
+	}
+
+	fun execPhaseStartShrink(context: CommandContext<CommandSourceStack>): Int {
+		val activeGame = UHC.activeGame() ?: return CommandUtil.error(context, "Game is not going")
+
+		activeGame.timer = activeGame.SHRINK_START_TIME
+
+		CommandUtil.successMessage(context, "Started phase shrink")
+
+		return Command.SINGLE_SUCCESS
+	}
+
+	fun execPhaseStartEndgame(context: CommandContext<CommandSourceStack>): Int {
+		val activeGame = UHC.activeGame() ?: return CommandUtil.error(context, "Game is not going")
+
+		activeGame.timer = activeGame.ENDGAME_START_TIME
+
+		CommandUtil.successMessage(context, "Started phase endgame")
 
 		return Command.SINGLE_SUCCESS
 	}

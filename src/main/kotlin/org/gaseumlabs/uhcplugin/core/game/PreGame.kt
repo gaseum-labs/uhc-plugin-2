@@ -1,37 +1,38 @@
-package org.gaseumlabs.uhcplugin.core
+package org.gaseumlabs.uhcplugin.core.game
 
 import org.bukkit.Location
+import org.gaseumlabs.uhcplugin.core.GameConfig
+import org.gaseumlabs.uhcplugin.core.team.Teams
+import org.gaseumlabs.uhcplugin.core.timer.SingleTimerHolder
+import org.gaseumlabs.uhcplugin.core.timer.Timer
 import java.util.*
 
-class Pregame(
+class PreGame(
 	var playerUUIDToLocation: HashMap<UUID, Location>,
 	val readyPlayers: HashSet<UUID>,
 	val gameConfig: GameConfig,
 	var minReadyPlayers: Int,
-) {
+	val teams: Teams,
+) : Stage {
+	val startGameTimer = SingleTimerHolder<Timer>()
+
 	companion object {
-		fun create(): Pregame {
-			return Pregame(
+		val INITIAL_RADIUS: Int = 512
+		val ENDGAME_RADIUS: Int = 72
+
+		fun createFresh(): PreGame {
+			return PreGame(
 				playerUUIDToLocation = HashMap(),
 				readyPlayers = HashSet(),
 				gameConfig = GameConfig.createDefault(),
-				2
+				2,
+				Teams(),
 			)
 		}
 	}
 
-	fun getInitialRadius(): Int {
-		return 512;
-		//val numPlayers = numReadyPlayers()
-		//val area = (169.0 * 256.0) * numPlayers + 2500.0 * numPlayers
-		//return floor(sqrt(area) / 2.0).toInt()
-	}
-
-	fun getEndgameRadius(): Int {
-		return 72;
-		//val numPlayers = numReadyPlayers()
-		//val area = 2500.0 * numPlayers
-		//return floor(sqrt(area) / 2.0).toInt()
+	override fun postTick() {
+		startGameTimer.postTick()
 	}
 
 	fun makePlayerReady(uuid: UUID): Boolean {

@@ -9,21 +9,21 @@ import org.bukkit.inventory.ItemType
 import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 object DebugCommands {
 	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
 		val advancementNode = Commands.literal("advancement")
 
 		advancementNode.then(
-			Commands.literal("register").executes {
-				AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
-				return@executes Command.SINGLE_SUCCESS
-			}
+			Commands.literal("register")
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes {
+					AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
+					return@executes Command.SINGLE_SUCCESS
+				}
 		)
 
 		val serializeNode = Commands.literal("serialize")
 
-		serializeNode.executes {
+		serializeNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes {
 			val itemStack = ItemType.IRON_SWORD.createItemStack { meta ->
 				meta.addEnchant(Enchantment.SHARPNESS, 2, true)
 			}

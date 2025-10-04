@@ -16,6 +16,7 @@ import org.gaseumlabs.uhcplugin.fix.PortalFix
 import org.gaseumlabs.uhcplugin.help.AdvancementEvents
 import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
+import org.gaseumlabs.uhcplugin.world.WorldManager
 
 class UHCPlugin : JavaPlugin() {
 	override fun onEnable() {
@@ -34,11 +35,14 @@ class UHCPlugin : JavaPlugin() {
 		Bukkit.getPluginManager().registerEvents(BrewFix(), this)
 		Bukkit.getPluginManager().registerEvents(AdvancementEvents(), this)
 
-		Bukkit.getScheduler().scheduleSyncDelayedTask(this, UHC::init)
-
 		AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
 
 		GameRunnerBot.setup()
+
+		Bukkit.getScheduler().scheduleSyncDelayedTask(this) {
+			WorldManager.init()
+			UHC.init()
+		}
 	}
 
 	companion object {

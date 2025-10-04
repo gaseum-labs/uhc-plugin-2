@@ -2,6 +2,7 @@ package org.gaseumlabs.uhcplugin.core.game
 
 import org.bukkit.Location
 import org.gaseumlabs.uhcplugin.core.GameConfig
+import org.gaseumlabs.uhcplugin.core.team.PreTeam
 import org.gaseumlabs.uhcplugin.core.team.Teams
 import org.gaseumlabs.uhcplugin.core.timer.SingleTimerHolder
 import org.gaseumlabs.uhcplugin.core.timer.Timer
@@ -12,7 +13,8 @@ class PreGame(
 	val readyPlayers: HashSet<UUID>,
 	val gameConfig: GameConfig,
 	var minReadyPlayers: Int,
-	val teams: Teams,
+	val teams: Teams<PreTeam>,
+	var hostMode: Boolean,
 ) : Stage {
 	val startGameTimer = SingleTimerHolder<Timer>()
 
@@ -26,7 +28,16 @@ class PreGame(
 				readyPlayers = HashSet(),
 				gameConfig = GameConfig.createDefault(),
 				2,
-				Teams(),
+				Teams(emptyList()) { uuid, memberUUIDs, name, color, team ->
+					PreTeam(
+						uuid,
+						memberUUIDs,
+						name,
+						color,
+						team
+					)
+				},
+				false,
 			)
 		}
 	}

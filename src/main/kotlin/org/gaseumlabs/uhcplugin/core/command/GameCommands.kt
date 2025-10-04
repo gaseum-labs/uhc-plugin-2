@@ -137,7 +137,7 @@ object GameCommands {
 		val (playerData, spawnBuddy) = when {
 			existingPlayerData == null -> {
 				val (team, spawnBuddy) = activeGame.teams.findTeamInNeedOr(activeGame) {
-					activeGame.teams.addTeam(listOf(player.uniqueId))
+					activeGame.teams.createTeam(listOf(player.uniqueId))
 				}
 				AddLateResult(
 					activeGame.playerDatas.add(PlayerData.createInitial(player.uniqueId, team)),

@@ -17,6 +17,7 @@ import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
+import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import org.gaseumlabs.uhcplugin.core.timer.CountdownTimer
 import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
@@ -85,9 +86,11 @@ object UHC {
 	}
 
 	fun preGameToActiveGame(preGame: PreGame) {
-		if (preGame.teams.teams.isEmpty()) {
-			preGame.teams.setRandomTeams(preGame.readyPlayers.toList(), 2)
-		}
+		val activeTeams = ActiveTeams(preGame.teams.teams.map { preTeam -> UHCTeam.fromPreTeam(preTeam) })
+
+		val teamSize = getAutoTeamSize(preGame)
+
+		activeTeams.fillRandomTeams(preGame.readyPlayers.toList(), teamSize)
 
 		val gameWorld = WorldManager.createWorld(UHCWorldType.GAME, Seed.goodSeedList.random(), true)
 		val netherWorld = WorldManager.createWorld(UHCWorldType.NETHER, null, true)
@@ -96,6 +99,8 @@ object UHC {
 		val finalRadius = PreGame.ENDGAME_RADIUS
 
 		val finalYRange = EndgamePhase.getFinalYRange(gameWorld, finalRadius, preGame.gameConfig.finalYLevels)
+
+		val isRanked = getIsRanked(preGame)
 
 		UHCBorder.set(gameWorld, borderRadius)
 		UHCBorder.set(netherWorld, borderRadius)
@@ -113,13 +118,13 @@ object UHC {
 			gameWorld,
 			PlayerSpreader.CONFIG_DEFAULT,
 			borderRadius,
-			preGame.teams.teams.map { team -> team.memberUUIDs }
+			activeTeams.teams.map { team -> team.memberUUIDs.toList() }
 		)
 
 		val playerDatas = PlayerDatas.create(preGame.playerUUIDToLocation.map { (uuid) ->
 			PlayerData.createInitial(
 				uuid,
-				preGame.teams.teams.find { team -> team.memberUUIDs.contains(uuid) }
+				activeTeams.teams.find { team -> team.memberUUIDs.contains(uuid) }
 					?: throw Exception("could not find team for $uuid"))
 		})
 
@@ -132,7 +137,8 @@ object UHC {
 			finalRadius,
 			gameWorld,
 			netherWorld,
-			preGame.teams
+			activeTeams,
+			isRanked
 		)
 
 		activeGame.playerDatas.active.forEach { playerData ->
@@ -160,6 +166,14 @@ object UHC {
 		this.stage = activeGame
 
 		CommandUtil.updatePlayers()
+	}
+
+	fun getIsRanked(preGame: PreGame): Boolean {
+		return preGame.numReadyPlayers() >= 8
+	}
+
+	fun getAutoTeamSize(preGame: PreGame): Int {
+		return if (preGame.numReadyPlayers() >= 6) 2 else 1
 	}
 
 	fun activeGameTick(activeGame: ActiveGame) {
@@ -230,11 +244,8 @@ object UHC {
 		}
 
 		val summary = Summary.create(
-			activeGame.startDate,
-			activeGame.ledger,
-			activeGame.teams.teams,
+			activeGame,
 			winningTeam,
-			activeGame.timer
 		)
 
 		activeGame.teams.clearTeams()

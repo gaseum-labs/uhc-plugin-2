@@ -7,7 +7,7 @@ import org.gaseumlabs.uhcplugin.core.phase.Grace
 import org.gaseumlabs.uhcplugin.core.phase.Phase
 import org.gaseumlabs.uhcplugin.core.phase.Shrink
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
-import org.gaseumlabs.uhcplugin.core.team.Teams
+import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
 import org.gaseumlabs.uhcplugin.core.timer.MultiTimerHolder
 import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
 import java.util.*
@@ -21,7 +21,8 @@ class ActiveGame(
 	val finalRadius: Int,
 	gameWorld: World,
 	netherWorld: World,
-	val teams: Teams,
+	val teams: ActiveTeams,
+	val ranked: Boolean,
 ) : Game(gameWorld, netherWorld) {
 	val ledger = Ledger()
 	val playerRespawnTimers = MultiTimerHolder<RespawnTimer>()

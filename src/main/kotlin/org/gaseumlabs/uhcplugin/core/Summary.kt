@@ -1,6 +1,7 @@
 package org.gaseumlabs.uhcplugin.core
 
 import org.bukkit.Bukkit
+import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.core.team.TeamColor
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import org.gaseumlabs.uhcplugin.util.MathUtil
@@ -28,12 +29,16 @@ data class SummaryPlayer(
  *
  * within each team, a player's place is the survival order of players in that team
  * ordered by the survival order of the longest surviving player on that team
- *
  */
-
-class Summary private constructor(val startDate: Date, val players: ArrayList<SummaryPlayer>) {
+class Summary private constructor(val startDate: Date, val ranked: Boolean, val players: ArrayList<SummaryPlayer>) {
 	companion object {
-		fun create(startDate: Date, ledger: Ledger, teams: List<UHCTeam>, winningTeam: UHCTeam?, ticks: Int): Summary {
+		fun create(activeGame: ActiveGame, winningTeam: UHCTeam?): Summary {
+			val teams = activeGame.teams.teams
+			val ledger = activeGame.ledger
+			val ticks = activeGame.timer
+			val startDate = activeGame.startDate
+			val ranked = activeGame.ranked
+
 			val allPlayers = teams.flatMap { team -> team.members }
 			val numPlayers = allPlayers.size
 
@@ -75,7 +80,7 @@ class Summary private constructor(val startDate: Date, val players: ArrayList<Su
 				)
 			} as ArrayList<SummaryPlayer>
 
-			return Summary(startDate, players)
+			return Summary(startDate, ranked, players)
 		}
 	}
 }

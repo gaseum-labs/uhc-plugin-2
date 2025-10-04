@@ -2,17 +2,24 @@ package org.gaseumlabs.uhcplugin.core.team
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.entity.LivingEntity
+import org.bukkit.OfflinePlayer
 import org.bukkit.scoreboard.Team
-import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import java.util.*
 import kotlin.math.ceil
 
-class Teams {
-	private val list = ArrayList<UHCTeam>()
-
-	val teams: List<UHCTeam>
+open class Teams<T : PreTeam>(teams: List<T>, val teamConstructor: TeamConstructor<T>) {
+	val teams: List<T>
 		get() = list
+
+	fun playersTeam(uuid: UUID): T? {
+		return teams.find { team -> team.memberUUIDs.contains(uuid) }
+	}
+
+	fun playersTeam(player: OfflinePlayer): T? {
+		return teams.find { team -> team.memberUUIDs.contains(player.uniqueId) }
+	}
+
+	/* ----------------------------------------------------------- */
 
 	fun clearTeams() {
 		list.forEach { uhcTeam ->
@@ -21,11 +28,11 @@ class Teams {
 		list.clear()
 	}
 
-	fun setRandomTeams(players: List<UUID>, size: Int) {
-		clearTeams()
+	fun fillRandomTeams(players: List<UUID>, size: Int) {
+		val nonTeamPlayers = players.filter { uuid -> list.any { team -> team.memberUUIDs.contains(uuid) } }
 
-		val shuffledPlayers = players.shuffled()
-		val numTeams = ceil(players.size / size.toDouble()).toInt()
+		val shuffledPlayers = nonTeamPlayers.shuffled()
+		val numTeams = ceil(nonTeamPlayers.size / size.toDouble()).toInt()
 		val colors = TeamColor.entries.shuffled()
 
 		list.addAll((0..<numTeams).map { index ->
@@ -37,49 +44,108 @@ class Teams {
 
 			adjustMinecraftTeam(team, teamName, color)
 
-			UHCTeam(uuid, ArrayList(shuffledPlayers.slice(index * size..<(index + 1) * size)), teamName, color, team)
+			val teamPlayers = HashSet(shuffledPlayers.slice(index * size..<(index + 1) * size))
+
+			teamPlayers.forEach { uuid ->
+				team.addPlayer(Bukkit.getOfflinePlayer(uuid))
+			}
+
+			teamConstructor(
+				uuid,
+				teamPlayers,
+				teamName,
+				color,
+				team
+			)
 		})
 	}
 
-	fun adjustMinecraftTeam(team: Team, name: String, color: TeamColor) {
+	fun createTeam(players: List<UUID>): T {
+		removePlayersFromTeam(players)
+
+		val uuid = UUID.randomUUID()
+		val teamName = "Team ${players.size + 1}"
+		val color = availableColors().firstOrNull() ?: throw Exception("Could not create team")
+
+		val team = Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam(uuid.toString())
+
+		players.forEach { uuid ->
+			team.addPlayer(Bukkit.getOfflinePlayer(uuid))
+		}
+
+		val uhcTeam = teamConstructor(uuid, HashSet(players), teamName, color, team)
+
+		list.add(uhcTeam)
+
+		cleanupEmptyTeams()
+
+		return uhcTeam
+	}
+
+	fun removeFromTeam(uuid: UUID) {
+		val oldTeam = playersTeam(uuid) ?: return
+
+		oldTeam.memberUUIDs.remove(uuid)
+
+		cleanupEmptyTeam(oldTeam)
+	}
+
+	fun moveToTeam(uuid: UUID, team: T) {
+		val oldTeam = playersTeam(uuid)
+
+		team.memberUUIDs.add(uuid)
+		team.team.addPlayer(Bukkit.getOfflinePlayer(uuid))
+
+		cleanupEmptyTeam(oldTeam)
+	}
+
+	fun destroyTeam(team: T) {
+		team.team.unregister()
+		list.remove(team)
+	}
+
+	/* ----------------------------------------------------------- */
+
+	protected val list = ArrayList<T>(teams)
+
+	private fun adjustMinecraftTeam(team: Team, name: String, color: TeamColor) {
 		team.color(color.teamColor)
 		team.displayName(Component.text(name, color.textColor))
 		team.prefix(Component.text("█", color.textColor))
 		team.suffix(Component.text("█", color.textColor))
 	}
 
-	fun addTeam(players: List<UUID>): UHCTeam {
-		val color = TeamColor.entries.filter { teamColor ->
+	private fun availableColors(): List<TeamColor> {
+		return TeamColor.entries.filter { teamColor ->
 			list.none { team -> team.color === teamColor }
-		}.random()
-		val uuid = UUID.randomUUID()
-		val teamName = "Team ${players.size + 1}"
-
-		val team = Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam(uuid.toString())
-
-		val uhcTeam = UHCTeam(uuid, ArrayList(players), teamName, color, team)
-
-		list.add(uhcTeam)
-
-		return uhcTeam
+		}.shuffled()
 	}
 
-	data class TeamInNeedResult(val team: UHCTeam, val memberEntity: LivingEntity?)
+	private fun removePlayersFromTeam(players: List<UUID>) {
+		players.forEach { uuid ->
+			val playersTeam = playersTeam(uuid) ?: return@forEach
 
-	fun findTeamInNeedOr(activeGame: ActiveGame, onNewTeam: () -> UHCTeam): TeamInNeedResult {
-		val maxTeamSize = list.maxOfOrNull { team -> team.size } ?: return TeamInNeedResult(onNewTeam(), null)
-		for (team in list) {
-			if (team.size == maxTeamSize) continue
-			return TeamInNeedResult(team, getSpawnBuddy(activeGame, team))
+			playersTeam.memberUUIDs.remove(uuid)
+			playersTeam.team.removePlayer(Bukkit.getOfflinePlayer(uuid))
 		}
-		return TeamInNeedResult(onNewTeam(), null)
 	}
 
-	fun getSpawnBuddy(activeGame: ActiveGame, team: UHCTeam): LivingEntity? {
-		val activeMembers = team.memberUUIDs.map { uuid ->
-			activeGame.playerDatas.getActive(uuid)
-		}
+	private fun cleanupEmptyTeam(team: T?) {
+		if (team == null) return
+		if (team.memberUUIDs.isNotEmpty()) return
+		team.team.unregister()
+		list.remove(team)
+	}
 
-		return activeMembers.firstOrNull()?.getEntity()
+	private fun cleanupEmptyTeams() {
+		list.removeIf { team ->
+			if (team.memberUUIDs.isEmpty()) {
+				team.team.unregister()
+				list.remove(team)
+				true
+			} else {
+				false
+			}
+		}
 	}
 }

@@ -1,16 +1,16 @@
 package org.gaseumlabs.uhcplugin.core.game
 
 import org.bukkit.World
-import org.gaseumlabs.uhcplugin.core.Ledger
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.core.phase.Grace
 import org.gaseumlabs.uhcplugin.core.phase.Phase
 import org.gaseumlabs.uhcplugin.core.phase.Shrink
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
+import org.gaseumlabs.uhcplugin.core.record.Ledger
 import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
 import org.gaseumlabs.uhcplugin.core.timer.MultiTimerHolder
 import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
-import java.util.*
+import java.time.LocalDate
 
 class ActiveGame(
 	val playerDatas: PlayerDatas,
@@ -26,7 +26,7 @@ class ActiveGame(
 ) : Game(gameWorld, netherWorld) {
 	val ledger = Ledger()
 	val playerRespawnTimers = MultiTimerHolder<RespawnTimer>()
-	val startDate = Date()
+	val startDate = LocalDate.now()
 	var timer: Int = 0
 
 	override fun destroy() {

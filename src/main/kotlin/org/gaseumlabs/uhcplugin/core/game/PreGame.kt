@@ -14,7 +14,7 @@ class PreGame(
 	val gameConfig: GameConfig,
 	var minReadyPlayers: Int,
 	val teams: Teams<PreTeam>,
-	var hostMode: Boolean,
+	var startGameMode: StartGameMode,
 ) : Stage {
 	val startGameTimer = SingleTimerHolder<Timer>()
 
@@ -37,7 +37,7 @@ class PreGame(
 						team
 					)
 				},
-				false,
+				StartGameMode.READY,
 			)
 		}
 	}

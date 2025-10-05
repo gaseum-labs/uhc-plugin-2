@@ -1,7 +1,10 @@
 package org.gaseumlabs.uhcplugin.help
 
+import org.bukkit.Bukkit
+import java.util.*
+
 object LobbyTips {
-	val tipsList = arrayOf(
+	private val list = arrayOf(
 		"Potions of strength are banned",
 		"Type /uhc lobby to return to lobby when spectating",
 		"Type /uhc forfeit to immediately lose the game",
@@ -58,4 +61,40 @@ object LobbyTips {
 		"To avoid adding Potion ingredients by hand, place a Hopper above your Brewing Stand!"
 	)
 
+	data class PlayerTips(val uuid: UUID, var index: Int, val order: IntArray) {
+		fun reset() {
+			order.shuffle()
+			index = 0
+		}
+	}
+
+	private val playerTips = ArrayList<PlayerTips>()
+
+	private fun createPlayerTips(uuid: UUID): PlayerTips {
+		val order = IntArray(list.size) { i -> i }
+		order.shuffle()
+		return PlayerTips(uuid, 0, order)
+	}
+
+	fun tick(timer: Int) {
+		if (timer % 20 != 0) return
+
+		val onlinePlayers = Bukkit.getOnlinePlayers().map { it.uniqueId }
+
+		playerTips.removeIf { tips -> onlinePlayers.none { uuid -> tips.uuid == uuid } }
+		playerTips.forEach { tips ->
+			++tips.index
+			if (tips.index >= list.size) tips.reset()
+		}
+		playerTips.addAll(
+			onlinePlayers
+				.filter { uuid -> playerTips.none { tips -> tips.uuid == uuid } }
+				.map { uuid -> createPlayerTips(uuid) }
+		)
+	}
+
+	fun getPlayerTip(uuid: UUID): String? {
+		val tips = playerTips.find { tips -> tips.uuid == uuid } ?: return null
+		return list[tips.order[tips.index]]
+	}
 }

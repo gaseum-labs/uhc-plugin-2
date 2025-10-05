@@ -17,12 +17,16 @@ import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
+import org.gaseumlabs.uhcplugin.core.record.LedgerKill
+import org.gaseumlabs.uhcplugin.core.record.Summary
 import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import org.gaseumlabs.uhcplugin.core.timer.CountdownTimer
 import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
+import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
 import org.gaseumlabs.uhcplugin.fix.BorderFix
+import org.gaseumlabs.uhcplugin.help.LobbyTips
 import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
 import org.gaseumlabs.uhcplugin.world.Seed
 import org.gaseumlabs.uhcplugin.world.UHCWorldType
@@ -33,6 +37,7 @@ object UHC {
 	private var stage: Stage = PreGame.createFresh()
 
 	val RESPAWN_TIME = TickTime.ofSeconds(15)
+	var timer = 0
 
 	fun init() {
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(UHCPlugin.self, UHC::tick, 0, 1)
@@ -45,8 +50,11 @@ object UHC {
 			is PostGame -> {}
 		}
 
+		LobbyTips.tick(timer)
 		Display.tick()
 		stage.postTick()
+		++timer
+		if (timer == 20) timer = 0
 	}
 
 	fun lobbyTick(preGame: PreGame) {
@@ -54,16 +62,18 @@ object UHC {
 
 		val result = preGame.startGameTimer.get()
 		if (result == null) {
-			if (numReadyPlayers >= preGame.minReadyPlayers) {
+			if (numReadyPlayers >= preGame.minReadyPlayers && preGame.startGameMode === StartGameMode.READY) {
 				preGame.startGameTimer.set(CountdownTimer(TickTime.ofSeconds(10)))
 				Broadcast.broadcast(MSG.game("Game starting in 2 minutes"))
 			}
 		} else {
-			if (result.isDone()) {
-				preGameToActiveGame(preGame)
+			if (preGame.startGameMode !== StartGameMode.READY) {
+				preGame.startGameTimer.cancel()
 			} else if (numReadyPlayers < preGame.minReadyPlayers) {
 				preGame.startGameTimer.cancel()
 				Broadcast.broadcast(MSG.game("Game cancelled because not enough players are ready"))
+			} else if (result.isDone()) {
+				preGameToActiveGame(preGame)
 			}
 		}
 	}
@@ -86,11 +96,17 @@ object UHC {
 	}
 
 	fun preGameToActiveGame(preGame: PreGame) {
-		val activeTeams = ActiveTeams(preGame.teams.teams.map { preTeam -> UHCTeam.fromPreTeam(preTeam) })
+		val activeTeams = if (preGame.startGameMode === StartGameMode.READY) {
+			val teamSize = getAutoTeamSize(preGame)
 
-		val teamSize = getAutoTeamSize(preGame)
+			val activeTeams = ActiveTeams(emptyList())
+			activeTeams.fillRandomTeams(preGame.readyPlayers.toList(), teamSize)
 
-		activeTeams.fillRandomTeams(preGame.readyPlayers.toList(), teamSize)
+			activeTeams
+		} else {
+			if (preGame.teams.teams.isEmpty()) throw Exception("No teams to start with")
+			ActiveTeams(preGame.teams.teams.map { preTeam -> UHCTeam.fromPreTeam(preTeam) })
+		}
 
 		val gameWorld = WorldManager.createWorld(UHCWorldType.GAME, Seed.goodSeedList.random(), true)
 		val netherWorld = WorldManager.createWorld(UHCWorldType.NETHER, null, true)
@@ -100,7 +116,7 @@ object UHC {
 
 		val finalYRange = EndgamePhase.getFinalYRange(gameWorld, finalRadius, preGame.gameConfig.finalYLevels)
 
-		val isRanked = getIsRanked(preGame)
+		val isRanked = activeTeams.teams.sumOf { team -> team.memberUUIDs.size } > 6
 
 		UHCBorder.set(gameWorld, borderRadius)
 		UHCBorder.set(netherWorld, borderRadius)
@@ -166,10 +182,6 @@ object UHC {
 		this.stage = activeGame
 
 		CommandUtil.updatePlayers()
-	}
-
-	fun getIsRanked(preGame: PreGame): Boolean {
-		return preGame.numReadyPlayers() >= 8
 	}
 
 	fun getAutoTeamSize(preGame: PreGame): Int {
@@ -247,6 +259,8 @@ object UHC {
 			activeGame,
 			winningTeam,
 		)
+
+		GameRunnerBot.instance?.sendSummaryMessage(summary)
 
 		activeGame.teams.clearTeams()
 

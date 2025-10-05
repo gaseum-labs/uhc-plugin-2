@@ -9,9 +9,11 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerQuitEvent
 import org.gaseumlabs.uhcplugin.core.broadcast.MSG
+import org.gaseumlabs.uhcplugin.core.game.StartGameMode
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.core.phase.PhaseType
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
+import org.gaseumlabs.uhcplugin.help.LobbyTips
 import org.gaseumlabs.uhcplugin.util.MathUtil
 import org.gaseumlabs.uhcplugin.world.WorldManager
 
@@ -34,6 +36,8 @@ object Display {
 			val preGame = UHC.preGame()
 			val startGameTimer = preGame?.startGameTimer?.get()
 
+			val lobbyTip = LobbyTips.getPlayerTip(player.uniqueId)?.let { MSG.game(it) }
+
 			return if (preGame == null) {
 				DisplayTemplate(
 					Component.text("UHC Lobby - Game in progress"),
@@ -41,7 +45,16 @@ object Display {
 					BossBar.Color.WHITE,
 					BossBar.Overlay.PROGRESS,
 					null,
-					null
+					lobbyTip
+				)
+			} else if (preGame.startGameMode === StartGameMode.HOST) {
+				DisplayTemplate(
+					Component.text("UHC Lobby - Waiting for host to start game"),
+					1.0,
+					BossBar.Color.WHITE,
+					BossBar.Overlay.PROGRESS,
+					null,
+					lobbyTip
 				)
 			} else if (startGameTimer == null) {
 				DisplayTemplate(
@@ -50,7 +63,7 @@ object Display {
 					BossBar.Color.WHITE,
 					BossBar.Overlay.PROGRESS,
 					null,
-					null
+					lobbyTip
 				)
 			} else {
 				DisplayTemplate(
@@ -59,7 +72,7 @@ object Display {
 					BossBar.Color.WHITE,
 					BossBar.Overlay.PROGRESS,
 					null,
-					null
+					lobbyTip
 				)
 			}
 		}
@@ -91,7 +104,7 @@ object Display {
 					"Grace Period - Border shrinks in ${TickTime.toTimeString(phaseAlong.remaining)}",
 					phaseType.textColor
 				),
-				phaseAlong.along,
+				1.0 - phaseAlong.along,
 				phaseType.barColor,
 				BossBar.Overlay.NOTCHED_20,
 				null,
@@ -107,7 +120,7 @@ object Display {
 					}",
 					phaseType.textColor
 				),
-				phaseAlong.along,
+				1.0 - phaseAlong.along,
 				phaseType.barColor,
 				BossBar.Overlay.NOTCHED_20,
 				null,

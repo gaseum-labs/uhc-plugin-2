@@ -1,4 +1,4 @@
-package org.gaseumlabs.uhcplugin.core
+package org.gaseumlabs.uhcplugin.core.record
 
 import java.util.*
 

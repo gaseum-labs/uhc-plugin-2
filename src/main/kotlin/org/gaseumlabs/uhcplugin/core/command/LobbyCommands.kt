@@ -13,6 +13,7 @@ import org.gaseumlabs.uhcplugin.core.PlayerManip
 import org.gaseumlabs.uhcplugin.core.UHC
 import org.gaseumlabs.uhcplugin.core.broadcast.Broadcast
 import org.gaseumlabs.uhcplugin.core.broadcast.MSG
+import org.gaseumlabs.uhcplugin.core.game.StartGameMode
 import org.gaseumlabs.uhcplugin.world.WorldManager
 
 object LobbyCommands {
@@ -128,6 +129,12 @@ object LobbyCommands {
 								.executes(::execTeamLeave)
 						)
 				)
+		)
+
+		uhcNode.then(
+			Commands.literal("start")
+				.requires(CommandUtil.makeRequires(RequiresFlag.OP, RequiresFlag.PRE_GAME))
+				.executes(::execStart)
 		)
 	}
 
@@ -250,14 +257,14 @@ object LobbyCommands {
 
 	private fun execHostEnable(context: CommandContext<CommandSourceStack>): Int {
 		val preGame = UHC.preGame() ?: return CommandUtil.error(context, "Game already going")
-		preGame.hostMode = true
+		preGame.startGameMode = StartGameMode.HOST
 		CommandUtil.successMessage(context, "Enabled host mode")
 		return Command.SINGLE_SUCCESS
 	}
 
 	private fun execHostDisable(context: CommandContext<CommandSourceStack>): Int {
 		val preGame = UHC.preGame() ?: return CommandUtil.error(context, "Game already going")
-		preGame.hostMode = false
+		preGame.startGameMode = StartGameMode.READY
 		CommandUtil.successMessage(context, "Disabled host mode")
 		return Command.SINGLE_SUCCESS
 	}
@@ -362,6 +369,15 @@ object LobbyCommands {
 		preGame.teams.removeFromTeam(player.uniqueId)
 
 		CommandUtil.successMessage(context, "Removed ${player.name} from their team")
+
+		return Command.SINGLE_SUCCESS
+	}
+
+	private fun execStart(context: CommandContext<CommandSourceStack>): Int {
+		val preGame = UHC.preGame() ?: return CommandUtil.error(context, "Game already going")
+		if (preGame.startGameMode !== StartGameMode.HOST) return CommandUtil.error(context, "Not in host mode")
+
+		UHC.preGameToActiveGame(preGame)
 
 		return Command.SINGLE_SUCCESS
 	}

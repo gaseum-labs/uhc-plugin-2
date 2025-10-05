@@ -17,8 +17,9 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.cache.CacheFlag
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
 import org.bukkit.Bukkit
-import org.gaseumlabs.uhcplugin.core.Summary
+import org.gaseumlabs.uhcplugin.core.record.Summary
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
@@ -239,10 +240,20 @@ class GameRunnerBot(private val api: JDA, private val config: Config) : Listener
 	}
 
 	fun sendSummaryMessage(summary: Summary) {
-		val guild = uhcGuild
-		val summaryChannelId = config.summaryChannelId ?: return
+		try {
+			val guild = uhcGuild
+			val summaryChannelId = config.summaryChannelId ?: return
 
-		val channel = guild.getTextChannelById(summaryChannelId) ?: return
+			val channel = guild.getTextChannelById(summaryChannelId) ?: return
+
+			channel.sendMessage(
+				MessageCreateBuilder()
+					.addEmbeds(SummaryMessage.create(summary))
+					.build()
+			).queue()
+		} catch (ex: Exception) {
+			ex.printStackTrace()
+		}
 	}
 
 	companion object {

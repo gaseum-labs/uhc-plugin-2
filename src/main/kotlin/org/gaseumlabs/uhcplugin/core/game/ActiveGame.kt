@@ -37,7 +37,10 @@ class ActiveGame(
 	override fun postTick() {
 		++timer
 		playerRespawnTimers.postTick()
-		endgamePhase.warningTimers.postTick()
+
+		if (getPhase() === endgamePhase) {
+			endgamePhase.postTick()
+		}
 	}
 
 	fun getPhase(): Phase {
@@ -51,8 +54,8 @@ class ActiveGame(
 	}
 
 	data class PhaseAlong(val phase: Phase, val timer: Int, val duration: Int) {
-		val remaining = duration - timer
-		val along = timer.toDouble() / duration.toDouble()
+		val remaining = (duration - timer).coerceAtLeast(0)
+		val along = (timer.toDouble() / duration.toDouble()).coerceIn(0.0, 1.0)
 	}
 
 	fun getPhaseAlong(): PhaseAlong {
@@ -61,7 +64,7 @@ class ActiveGame(
 		} else if (timer < gracePhase.duration + shrinkPhase.duration) {
 			PhaseAlong(shrinkPhase, timer - gracePhase.duration, shrinkPhase.duration)
 		} else {
-			PhaseAlong(endgamePhase, 0, 1)
+			PhaseAlong(endgamePhase, timer - gracePhase.duration - shrinkPhase.duration, endgamePhase.collapseTime)
 		}
 	}
 

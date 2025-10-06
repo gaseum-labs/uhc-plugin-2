@@ -77,82 +77,99 @@ object Display {
 			}
 		}
 
-		val game = UHC.activeGame() ?: return null
+		UHC.activeGame()?.let { activeGame ->
+			val phaseAlong = activeGame.getPhaseAlong()
+			val phaseType = phaseAlong.phase.type
+			val borderRadius = UHCBorder.getBorderRadius(activeGame.gameWorld.worldBorder)
 
-		val phaseAlong = game.getPhaseAlong()
-		val phaseType = phaseAlong.phase.type
-		val borderRadius = UHCBorder.getCurrentRadius(game)
+			val respawnTimerResult = activeGame.playerRespawnTimers.get().find { (timer) ->
+				timer.uuid == player.uniqueId
+			}
 
-		val respawnTimerResult = game.playerRespawnTimers.get().find { (timer) ->
-			timer.uuid == player.uniqueId
-		}
+			if (respawnTimerResult != null) {
+				return DisplayTemplate(
+					Component.text("Respawn in ${TickTime.toTimeString(respawnTimerResult.remaining())}"),
+					respawnTimerResult.along(),
+					BossBar.Color.WHITE,
+					BossBar.Overlay.NOTCHED_12,
+					null,
+					null
+				)
+			}
 
-		if (respawnTimerResult != null) {
-			return DisplayTemplate(
-				Component.text("Respawn in ${TickTime.toTimeString(respawnTimerResult.remaining())}"),
-				respawnTimerResult.along(),
-				BossBar.Color.WHITE,
-				BossBar.Overlay.NOTCHED_12,
-				null,
-				null
-			)
-		}
-
-		return when (phaseType) {
-			PhaseType.GRACE -> DisplayTemplate(
-				Component.text(
-					"Grace Period - Border shrinks in ${TickTime.toTimeString(phaseAlong.remaining)}",
-					phaseType.textColor
-				),
-				1.0 - phaseAlong.along,
-				phaseType.barColor,
-				BossBar.Overlay.NOTCHED_20,
-				null,
-				null
-			)
-
-			PhaseType.SHRINK -> DisplayTemplate(
-				Component.text(
-					"Border radius: $borderRadius - shrinks to ${game.finalRadius} in ${
-						TickTime.toTimeString(
-							phaseAlong.remaining
-						)
-					}",
-					phaseType.textColor
-				),
-				1.0 - phaseAlong.along,
-				phaseType.barColor,
-				BossBar.Overlay.NOTCHED_20,
-				null,
-				null
-			)
-
-			PhaseType.ENDGAME -> {
-				val endgame = game.endgamePhase
-				val timers = endgame.warningTimers.get()
-				val timer = timers.find { (timer) -> timer.uuid == player.uniqueId }
-
-				if (timer == null) return DisplayTemplate(
-					Component.text("Endgame", phaseType.textColor),
-					1.0,
+			return when (phaseType) {
+				PhaseType.GRACE -> DisplayTemplate(
+					Component.text(
+						"Grace Period - Border shrinks in ${TickTime.toTimeString(phaseAlong.remaining)}",
+						phaseType.textColor
+					),
+					1.0 - phaseAlong.along,
 					phaseType.barColor,
-					BossBar.Overlay.NOTCHED_6,
+					BossBar.Overlay.NOTCHED_20,
 					null,
 					null
 				)
 
-				val showTitle = timer.ticks % 20 == 0
-
-				DisplayTemplate(
-					MSG.error("Return to y level ${endgame.currentYRange.last} or take damage!"),
-					MathUtil.invLerp(0, EndgamePhase.DAMAGE_TIME, timer.ticks),
-					BossBar.Color.RED,
-					BossBar.Overlay.PROGRESS,
-					if (showTitle) Title.title(Component.empty(), MSG.error("TOO HIGH!"), 0, 0, 20) else null,
+				PhaseType.SHRINK -> DisplayTemplate(
+					Component.text(
+						"Border radius: $borderRadius - shrinks to ${activeGame.finalRadius} in ${
+							TickTime.toTimeString(
+								phaseAlong.remaining
+							)
+						}",
+						phaseType.textColor
+					),
+					1.0 - phaseAlong.along,
+					phaseType.barColor,
+					BossBar.Overlay.NOTCHED_20,
+					null,
 					null
 				)
+
+				PhaseType.ENDGAME -> {
+					val endgame = activeGame.endgamePhase
+					val timers = endgame.warningTimers.get()
+					val timer = timers.find { (timer) -> timer.uuid == player.uniqueId }
+					val verticalRange = endgame.getAlongYRange(phaseAlong.along)
+
+					if (timer == null) return DisplayTemplate(
+						Component.text(
+							"Endgame - vertical range ${verticalRange.first} - ${verticalRange.last}",
+							phaseType.textColor
+						),
+						1.0 - phaseAlong.along,
+						phaseType.barColor,
+						BossBar.Overlay.NOTCHED_6,
+						null,
+						null
+					)
+
+					val showTitle = timer.ticks % 20 == 0
+
+					DisplayTemplate(
+						MSG.error("Return to y level ${verticalRange.last} or take damage!"),
+						MathUtil.invLerp(0, EndgamePhase.DAMAGE_TIME, timer.ticks),
+						BossBar.Color.RED,
+						BossBar.Overlay.PROGRESS,
+						if (showTitle) Title.title(Component.empty(), MSG.error("TOO HIGH!"), 0, 0, 20) else null,
+						null
+					)
+				}
 			}
 		}
+
+		UHC.postGame().let {
+			return DisplayTemplate(
+				Component.text("Post Game"),
+				1.0,
+				BossBar.Color.WHITE,
+				BossBar.Overlay.PROGRESS,
+				null,
+				null
+			)
+		}
+
+		return null
 	}
 
 	fun tick() {
@@ -180,6 +197,8 @@ object Display {
 				}
 				playerBar.name()
 			}
+
+			if (template?.title != null) player.showTitle(template.title)
 		}
 	}
 

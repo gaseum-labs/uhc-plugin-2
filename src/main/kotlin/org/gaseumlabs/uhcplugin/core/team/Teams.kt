@@ -29,7 +29,7 @@ open class Teams<T : PreTeam>(teams: List<T>, val teamConstructor: TeamConstruct
 	}
 
 	fun fillRandomTeams(players: List<UUID>, size: Int) {
-		val nonTeamPlayers = players.filter { uuid -> list.any { team -> team.memberUUIDs.contains(uuid) } }
+		val nonTeamPlayers = players.filter { uuid -> list.none { team -> team.memberUUIDs.contains(uuid) } }
 
 		val shuffledPlayers = nonTeamPlayers.shuffled()
 		val numTeams = ceil(nonTeamPlayers.size / size.toDouble()).toInt()
@@ -41,10 +41,10 @@ open class Teams<T : PreTeam>(teams: List<T>, val teamConstructor: TeamConstruct
 			val teamName = "Team ${index + 1}"
 
 			val team = Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam(uuid.toString())
-
 			adjustMinecraftTeam(team, teamName, color)
 
-			val teamPlayers = HashSet(shuffledPlayers.slice(index * size..<(index + 1) * size))
+			val teamPlayers =
+				HashSet(shuffledPlayers.slice(index * size..<(((index + 1) * size)).coerceAtMost(shuffledPlayers.size)))
 
 			teamPlayers.forEach { uuid ->
 				team.addPlayer(Bukkit.getOfflinePlayer(uuid))
@@ -68,6 +68,7 @@ open class Teams<T : PreTeam>(teams: List<T>, val teamConstructor: TeamConstruct
 		val color = availableColors().firstOrNull() ?: throw Exception("Could not create team")
 
 		val team = Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam(uuid.toString())
+		adjustMinecraftTeam(team, teamName, color)
 
 		players.forEach { uuid ->
 			team.addPlayer(Bukkit.getOfflinePlayer(uuid))
@@ -86,6 +87,7 @@ open class Teams<T : PreTeam>(teams: List<T>, val teamConstructor: TeamConstruct
 		val oldTeam = playersTeam(uuid) ?: return
 
 		oldTeam.memberUUIDs.remove(uuid)
+		oldTeam.team.removePlayer(Bukkit.getOfflinePlayer(uuid))
 
 		cleanupEmptyTeam(oldTeam)
 	}

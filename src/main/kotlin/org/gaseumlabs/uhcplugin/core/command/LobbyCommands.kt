@@ -346,7 +346,10 @@ object LobbyCommands {
 
 		val teamPlayerName = context.getArgument("teamPlayer", String::class.java)
 		val teamPlayer =
-			Bukkit.getOfflinePlayerIfCached(playerName) ?: return CommandUtil.error(context, "Player does not exist")
+			Bukkit.getOfflinePlayerIfCached(teamPlayerName) ?: return CommandUtil.error(
+				context,
+				"Player does not exist"
+			)
 
 		val team = preGame.teams.playersTeam(teamPlayer) ?: return CommandUtil.error(context, "Player not on a team")
 

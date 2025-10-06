@@ -49,6 +49,7 @@ object OfflineZombie {
 			zombie.equipment.setBoots(capture.boots, true)
 
 			zombie.canPickupItems = false
+			zombie.removeWhenFarAway = false
 
 			zombie.equipment.bootsDropChance = 0.0f
 			zombie.equipment.helmetDropChance = 0.0f

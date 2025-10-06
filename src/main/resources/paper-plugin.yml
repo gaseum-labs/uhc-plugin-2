@@ -5,3 +5,9 @@ description: The second UHC Plugin
 author: Balduvian
 api-version: '1.21.8'
 bootstrapper: org.gaseumlabs.uhcplugin.UHCBootstrapper
+dependencies:
+  server:
+    ProtocolLib:
+      load: BEFORE
+      required: true
+      join-classpath: true

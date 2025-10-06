@@ -13,15 +13,21 @@ object Reflection {
 		field.set(target, value)
 	}
 
-	fun <T>getFieldValue (target: Any, fieldName: String): T {
+	fun <T> getFieldValue(target: Any, fieldName: String): T {
 		val field = target.javaClass.getDeclaredField(fieldName)
 		field.isAccessible = true
 		return field.get(target) as T
 	}
 
-	fun <C,T>getStaticFieldValue (clazz: Class<C>, fieldName: String): T {
+	fun <C, T> getStaticFieldValue(clazz: Class<C>, fieldName: String): T {
 		val field = clazz.getDeclaredField(fieldName)
 		field.isAccessible = true
 		return field.get(null) as T
+	}
+
+	fun getEnumOrdinal(target: Any): Int {
+		val clazz = target::class.java
+		val ordinalMethod = clazz.getMethod("ordinal")
+		return ordinalMethod.invoke(target) as Int
 	}
 }

@@ -8,7 +8,7 @@ import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 
 class Shrink(val duration: Int) : Phase(PhaseType.SHRINK) {
 	fun start(activeGame: ActiveGame) {
-		UHCBorder.shrink(activeGame.gameWorld, activeGame.finalRadius, activeGame.shrinkPhase.duration)
+		UHCBorder.shrink(activeGame.gameWorld, activeGame.finalRadius, activeGame.shrinkPhase.duration / 20)
 		activeGame.gameWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
 		activeGame.netherWorld.setGameRule(GameRule.NATURAL_REGENERATION, false)
 		activeGame.gameWorld.pvp = true

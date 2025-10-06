@@ -1,7 +1,7 @@
 package org.gaseumlabs.uhcplugin.core
 
 import net.kyori.adventure.text.Component
-import net.minecraft.core.particles.DustParticleOptions
+import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.OfflinePlayer
 import org.bukkit.Particle
@@ -78,7 +78,7 @@ object Death {
 			1.0,
 			0.5,
 			0.5,
-			DustParticleOptions(0xff0000, 1.0f)
+			Particle.DustOptions(Color.fromRGB(0xff0000), 1.0f)
 		)
 	}
 }

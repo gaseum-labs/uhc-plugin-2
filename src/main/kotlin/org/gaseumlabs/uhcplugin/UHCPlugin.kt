@@ -9,6 +9,7 @@ import org.gaseumlabs.uhcplugin.core.GameEvents
 import org.gaseumlabs.uhcplugin.core.Login
 import org.gaseumlabs.uhcplugin.core.UHC
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
+import org.gaseumlabs.uhcplugin.core.protocol.UHCProtocol
 import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
 import org.gaseumlabs.uhcplugin.fix.BrewFix
 import org.gaseumlabs.uhcplugin.fix.PearlFix
@@ -43,6 +44,8 @@ class UHCPlugin : JavaPlugin() {
 			WorldManager.init()
 			UHC.init()
 		}
+
+		UHCProtocol.init()
 	}
 
 	companion object {

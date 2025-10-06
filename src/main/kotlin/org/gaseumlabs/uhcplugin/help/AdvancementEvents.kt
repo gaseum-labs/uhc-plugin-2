@@ -24,10 +24,7 @@ class AdvancementEvents : Listener {
 
 	@EventHandler
 	fun onTeleport(event: PlayerTeleportEvent) {
-		val (game) = getPlayerData(event.player) ?: run {
-			event.isCancelled = true
-			return
-		}
+		val (game) = getPlayerData(event.player) ?: return
 
 		if (event.to.world === game.netherWorld) {
 			PlayerAdvancement.grant(event.player, UHCAdvancements.UHC_NETHER)

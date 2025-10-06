@@ -13,10 +13,12 @@ import org.gaseumlabs.uhcplugin.core.game.*
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.core.phase.Grace
 import org.gaseumlabs.uhcplugin.core.phase.Shrink
+import org.gaseumlabs.uhcplugin.core.phase.VerticalBorder
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
+import org.gaseumlabs.uhcplugin.core.protocol.UHCProtocol
 import org.gaseumlabs.uhcplugin.core.record.LedgerKill
 import org.gaseumlabs.uhcplugin.core.record.Summary
 import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
@@ -96,6 +98,9 @@ object UHC {
 	}
 
 	fun preGameToActiveGame(preGame: PreGame) {
+		WorldManager.destroyWorld(UHCWorldType.GAME)
+		WorldManager.destroyWorld(UHCWorldType.NETHER)
+
 		val activeTeams = if (preGame.startGameMode === StartGameMode.READY) {
 			val teamSize = getAutoTeamSize(preGame)
 
@@ -114,7 +119,7 @@ object UHC {
 		val borderRadius = PreGame.INITIAL_RADIUS
 		val finalRadius = PreGame.ENDGAME_RADIUS
 
-		val finalYRange = EndgamePhase.getFinalYRange(gameWorld, finalRadius, preGame.gameConfig.finalYLevels)
+		val finalYRange = VerticalBorder.getFinalYRange(gameWorld, finalRadius, preGame.gameConfig.finalYLevels)
 
 		val isRanked = activeTeams.teams.sumOf { team -> team.memberUUIDs.size } > 6
 
@@ -137,18 +142,20 @@ object UHC {
 			activeTeams.teams.map { team -> team.memberUUIDs.toList() }
 		)
 
-		val playerDatas = PlayerDatas.create(preGame.playerUUIDToLocation.map { (uuid) ->
-			PlayerData.createInitial(
-				uuid,
-				activeTeams.teams.find { team -> team.memberUUIDs.contains(uuid) }
-					?: throw Exception("could not find team for $uuid"))
+		val playerDatas = PlayerDatas.create(activeTeams.teams.flatMap { team ->
+			team.memberUUIDs.map { uuid ->
+				PlayerData.createInitial(
+					uuid,
+					team
+				)
+			}
 		})
 
 		val activeGame = ActiveGame(
 			playerDatas = playerDatas,
 			gracePhase = Grace(preGame.gameConfig.graceDuration),
 			shrinkPhase = Shrink(preGame.gameConfig.shrinkDuration),
-			endgamePhase = EndgamePhase(finalYRange),
+			endgamePhase = EndgamePhase(preGame.gameConfig.collapseTime, finalYRange),
 			borderRadius,
 			finalRadius,
 			gameWorld,
@@ -182,6 +189,12 @@ object UHC {
 		this.stage = activeGame
 
 		CommandUtil.updatePlayers()
+
+		activeGame.playerDatas.active.forEach { playerData ->
+			playerData.executeAction { player ->
+				UHCProtocol.untrackAllPlayers(player, activeGame)
+			}
+		}
 	}
 
 	fun getAutoTeamSize(preGame: PreGame): Int {

@@ -38,6 +38,8 @@ object YFinder {
 			Material.ACACIA_LOG,
 			Material.JUNGLE_LEAVES,
 			Material.JUNGLE_LOG,
+			Material.MANGROVE_LEAVES,
+			Material.MANGROVE_LOG,
 			Material.AZALEA_LEAVES,
 			Material.FLOWERING_AZALEA_LEAVES,
 			Material.BEE_NEST,

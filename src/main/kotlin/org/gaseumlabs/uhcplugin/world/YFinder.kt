@@ -1,5 +1,6 @@
 package org.gaseumlabs.uhcplugin.world
 
+import org.bukkit.Chunk
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
@@ -21,7 +22,16 @@ object YFinder {
 		return range.first
 	}
 
+	fun findTopBlockY(chunk: Chunk, x: Int, z: Int): Int? {
+		for (y in 255 downTo 0) {
+			val block = chunk.getBlock(x, y, z)
+			if (isSurfaceBlock(block)) return y
+		}
+		return null
+	}
+
 	fun isSurfaceBlock(block: Block): Boolean {
+		if (block.type === Material.WATER) return true
 		if (block.isPassable) return false
 		return when (block.type) {
 			Material.OAK_LEAVES,

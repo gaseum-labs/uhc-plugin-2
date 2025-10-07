@@ -163,16 +163,16 @@ object GameCommands {
 			activeGame,
 			player.uniqueId,
 			activeGame.gameWorld,
-			UHCBorder.getCurrentRadius(activeGame),
+			UHCBorder.getBorderRadius(activeGame.gameWorld.worldBorder),
 			PlayerSpreader.CONFIG_DEFAULT
 		) ?: activeGame.gameWorld.spawnLocation
 
 		playerData.executeAction { player ->
-			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, playerData.getMaxHealth(), location)
+			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, playerData.maxHealth, location)
 		}.onNoZombie {
 			OfflineZombie.spawn(
 				player.uniqueId,
-				PlayerCapture.createInitial(location, playerData.getMaxHealth())
+				PlayerCapture.createInitial(location, playerData.maxHealth)
 			)
 		}
 

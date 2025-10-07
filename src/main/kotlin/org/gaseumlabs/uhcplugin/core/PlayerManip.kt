@@ -1,7 +1,7 @@
 package org.gaseumlabs.uhcplugin.core
 
-import net.minecraft.world.entity.ai.attributes.Attributes
 import org.bukkit.*
+import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeInstance
 import org.bukkit.attribute.AttributeModifier
 import org.bukkit.entity.Player
@@ -23,7 +23,7 @@ object PlayerManip {
 		player.fallDistance = 0.0f
 		player.saturation = 5.0f
 		player.foodLevel = 20
-		player.health = 20.0
+		player.health = maxHealth
 		player.fireTicks = 0
 		player.level = 0
 		player.exp = 0.0f
@@ -51,7 +51,7 @@ object PlayerManip {
 		player.fallDistance = offlineZombie.fallDistance
 		if (doWipe) player.saturation = 5.0f
 		if (doWipe) player.foodLevel = 20
-		player.health = offlineZombie.health
+		player.health = offlineZombie.health.coerceIn(0.0, maxHealth)
 		player.fireTicks = offlineZombie.fireTicks
 		if (doWipe) player.level = 0
 		if (doWipe) player.exp = 0.0f
@@ -74,8 +74,8 @@ object PlayerManip {
 		Registry.ATTRIBUTE.forEach { attribute ->
 			val instance = player.getAttribute(attribute) ?: return@forEach
 
-			if (attribute === Attributes.MAX_HEALTH) {
-				resetAttribute(instance, maxHealth.toDouble())
+			if (attribute === Attribute.MAX_HEALTH) {
+				resetAttribute(instance, maxHealth)
 			} else {
 				resetAttribute(instance, null)
 			}
@@ -104,8 +104,8 @@ object PlayerManip {
 
 	fun makeSpectator(player: Player, location: Location?) {
 		player.gameMode = GameMode.SPECTATOR
-		player.health = 20.0
 		resetAttributes(player, 20.0)
+		player.health = 20.0
 		location?.let { player.teleport(location) }
 	}
 

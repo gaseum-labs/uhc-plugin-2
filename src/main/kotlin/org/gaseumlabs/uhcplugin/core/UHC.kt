@@ -171,14 +171,14 @@ object UHC {
 				PlayerManip.resetPlayer(
 					player,
 					GameMode.SURVIVAL,
-					playerData.getMaxHealth(),
+					playerData.maxHealth,
 					location
 				)
 			}.onNoZombie {
 				playerData.offlineRecord.onGameSpawn(
 					OfflineZombie.spawn(
 						playerData.uuid,
-						PlayerCapture.createInitial(location, playerData.getMaxHealth())
+						PlayerCapture.createInitial(location, playerData.maxHealth)
 					)
 				)
 			}
@@ -210,7 +210,7 @@ object UHC {
 					activeGame,
 					playerData.uuid,
 					activeGame.gameWorld,
-					UHCBorder.getCurrentRadius(activeGame),
+					UHCBorder.getBorderRadius(activeGame.gameWorld.worldBorder),
 					PlayerSpreader.CONFIG_DEFAULT
 				)
 
@@ -222,7 +222,7 @@ object UHC {
 						PlayerManip.resetPlayer(
 							player,
 							GameMode.SURVIVAL,
-							playerData.getMaxHealth(),
+							playerData.maxHealth,
 							respawnLocation
 						)
 					}.onNoZombie {
@@ -231,7 +231,7 @@ object UHC {
 								playerData.uuid,
 								PlayerCapture.createInitial(
 									respawnLocation,
-									playerData.getMaxHealth()
+									playerData.maxHealth
 								)
 							)
 						)
@@ -296,9 +296,14 @@ object UHC {
 		deathMessage: Component,
 		forcePermanent: Boolean,
 	) {
-		val phase = activeGame.getPhase().type
+		val phase = activeGame.getPhase()
 
-		if (phase.deathCounts || forcePermanent) playerData.numDeaths += 1
+		if (phase.type.deathCounts || forcePermanent) {
+			playerData.numDeaths += 1
+			if (phase is Shrink) {
+				playerData.maxHealth = PlayerData.getNewMaxHealth(activeGame.getPhaseAlong().along)
+			}
+		}
 
 		playerData.offlineRecord.onDeath(deathLocation)
 
@@ -306,7 +311,7 @@ object UHC {
 			PlayerManip.makeSpectator(player, null)
 		}
 
-		val isElimination = if (!forcePermanent && playerData.canRespawn() && phase.canRespawn) {
+		val isElimination = if (!forcePermanent && playerData.canRespawn() && phase.type.canRespawn) {
 			activeGame.playerRespawnTimers.add(RespawnTimer(playerData.uuid, RESPAWN_TIME))
 			false
 		} else {

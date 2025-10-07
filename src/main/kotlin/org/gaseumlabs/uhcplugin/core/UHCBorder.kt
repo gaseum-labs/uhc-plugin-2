@@ -6,9 +6,6 @@ import org.bukkit.WorldBorder
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.LivingEntity
-import org.gaseumlabs.uhcplugin.core.game.ActiveGame
-import org.gaseumlabs.uhcplugin.core.phase.PhaseType
-import org.gaseumlabs.uhcplugin.util.MathUtil
 import kotlin.math.absoluteValue
 import kotlin.math.ceil
 
@@ -29,21 +26,6 @@ object UHCBorder {
 
 	fun stop(world: World) {
 		world.worldBorder.size = world.worldBorder.size
-	}
-
-	fun getCurrentRadius(activeGame: ActiveGame): Int {
-		val phaseAlong = activeGame.getPhaseAlong()
-
-		return when (phaseAlong.phase.type) {
-			PhaseType.GRACE -> activeGame.initialRadius
-			PhaseType.SHRINK -> MathUtil.lerp(
-				activeGame.finalRadius.toDouble(),
-				activeGame.initialRadius.toDouble(),
-				phaseAlong.along
-			).toInt()
-
-			PhaseType.ENDGAME -> activeGame.finalRadius
-		}
 	}
 
 	fun getBorderRadius(worldBorder: WorldBorder): Int {

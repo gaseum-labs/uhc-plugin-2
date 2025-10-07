@@ -4,6 +4,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
+import org.bukkit.block.BlockFace
 import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.world.YFinder
 import java.util.*
@@ -29,27 +30,28 @@ object PlayerSpreader {
 		outerRadius: Int,
 		groups: List<List<UUID>>,
 	): HashMap<UUID, Location> {
-		val random = Random(world.seed)
+		val random = Random.Default
 
 		val angleOffset = random.nextDouble(PI * 2.0)
 
 		val playerToLocation = HashMap<UUID, Location>()
 
-		for (group in groups) {
-			val locations = getGroupLocations(
-				world,
-				angleOffset,
-				config,
-				groups.size,
-				group.size,
-				outerRadius,
-				random
-			)
-				?: throw Exception("Could not find enough spread locations")
+		groups.forEachIndexed { groupIndex, group ->
+			val locations = ArrayList<Location>()
 
-			for (playerIndex in group.indices) {
-				val playerUUID = group[playerIndex]
-				playerToLocation[playerUUID] = locations[playerIndex]
+			for (tryIndex in 0..<config.numTries) {
+				val (x, z) = getSliceXZ(config, angleOffset, groups.size, groupIndex, outerRadius, random)
+
+				findLocationsAt(world, config, x, z, group.size, random)?.let {
+					locations.addAll(it)
+					break
+				}
+			}
+
+			if (locations.isEmpty()) throw Exception("Could not find enough spread locations")
+
+			group.forEachIndexed { index, uuid ->
+				playerToLocation[uuid] = locations[index]
 			}
 		}
 
@@ -109,29 +111,11 @@ object PlayerSpreader {
 	fun distance2(x0: Double, y0: Double, x1: Double, y1: Double): Double =
 		(x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)
 
-	fun getGroupLocations(
-		world: World,
-		angleOffset: Double,
-		config: Config,
-		numGroups: Int,
-		groupSize: Int,
-		outerRadius: Int,
-		random: Random,
-	): List<Location>? {
-		for (tryIndex in 0..<config.numTries) {
-			val (x, z) = getSliceXZ(angleOffset, config, numGroups, outerRadius, random)
-
-			val locations = findLocationsAt(world, config, x, z, groupSize, random)
-
-			return locations
-		}
-		return null
-	}
-
 	fun getSliceXZ(
-		angleOffset: Double,
 		config: Config,
+		angleOffset: Double,
 		numGroups: Int,
+		groupIndex: Int,
 		outerRadius: Int,
 		random: Random,
 	): Pair<Int, Int> {
@@ -142,7 +126,7 @@ object PlayerSpreader {
 
 		val angleVariance = (2.0 * PI) / numGroups - config.minDistance / radius
 
-		val angle = angleOffset + random.nextDouble(-0.5, 0.5) * angleVariance
+		val angle = groupIndex * maxAngle + angleOffset + random.nextDouble(-0.5, 0.5) * angleVariance
 
 		val x = (cos(angle) * radius).roundToInt()
 		val z = (sin(angle) * radius).roundToInt()
@@ -157,7 +141,7 @@ object PlayerSpreader {
 		z: Int,
 		numLocations: Int,
 		random: Random,
-	): List<Location>? {
+	): ArrayList<Location>? {
 		val locations = ArrayList<Location>()
 
 		val y = YFinder.findTopBlockY(world, x, z) ?: return null
@@ -205,5 +189,88 @@ object PlayerSpreader {
 
 			else -> true
 		}
+	}
+
+	fun getSurfaceBlocks(block: Block, dx: Int, dz: Int, radius: Int): ArrayList<Block> {
+		val trail = ArrayList<Block>()
+
+		var lastY = block.y
+		val world = block.world
+
+		for (r in 1..radius) {
+			val x = block.x + r * dx
+			val z = block.z + r * dz
+
+			val current = world.getBlockAt(x, lastY, z)
+
+			val nextSurface: Block = if (YFinder.isSurfaceBlock(current)) {
+				val airAbove = findNextAirBlockAbove(current)
+
+				val superSurface = findNextSurfaceBlockAbove(airAbove, 20)
+
+				if (superSurface != null) {
+					val superAir = findNextAirBlockAbove(superSurface)
+
+					superAir.getRelative(BlockFace.DOWN)
+				} else {
+					airAbove.getRelative(BlockFace.DOWN)
+				}
+			} else {
+				val surfaceAbove = findNextSurfaceBlockAbove(current, 20)
+				if (surfaceAbove != null) {
+					val airAbove = findNextAirBlockAbove(surfaceAbove)
+
+					airAbove.getRelative(BlockFace.DOWN)
+				} else {
+					val surfaceBelow = findNextSurfaceBlockBelow(current)
+
+					surfaceBelow
+				}
+			}
+
+			trail.add(nextSurface)
+			lastY = nextSurface.y
+		}
+
+		return trail
+	}
+
+	fun findNextAirBlockAbove(block: Block): Block {
+		val world = block.world
+
+		for (aboveY in block.y + 1..255) {
+			val aboveBlock = world.getBlockAt(block.x, aboveY, block.z)
+			if (!YFinder.isSurfaceBlock(aboveBlock)) {
+				return aboveBlock
+			}
+		}
+
+		return world.getBlockAt(block.x, 256, block.z)
+	}
+
+	fun findNextSurfaceBlockAbove(block: Block, limitSearch: Int): Block? {
+		val world = block.world
+
+		for (aboveY in block.y + 1..255) {
+			val aboveBlock = world.getBlockAt(block.x, aboveY, block.z)
+			if (YFinder.isSurfaceBlock(aboveBlock)) {
+				return aboveBlock
+			}
+		}
+
+		return null
+	}
+
+	fun findNextSurfaceBlockBelow(block: Block): Block {
+		val world = block.world
+
+		for (belowY in block.y - 1 downTo -64) {
+			val belowBlock = world.getBlockAt(block.x, belowY, block.z)
+			if (YFinder.isSurfaceBlock(belowBlock)) {
+				return belowBlock
+			}
+		}
+
+		return world.getBlockAt(block.x, -64, block.z)
 	}
 }

@@ -6,7 +6,9 @@ import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.entity.Zombie
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
+import org.gaseumlabs.uhcplugin.util.MathUtil
 import java.util.*
+import kotlin.math.roundToInt
 
 data class OfflineRecord(var zombie: Zombie?, var spectateLocation: Location?, var wipeMode: WipeMode) {
 	fun onDeath(location: Location) {
@@ -50,6 +52,7 @@ class PlayerData private constructor(
 	var numDeaths: Int,
 	var isActive: Boolean,
 	var team: UHCTeam,
+	var maxHealth: Double,
 ) {
 	var offlineRecord: OfflineRecord = OfflineRecord(null, null, WipeMode.KEEP)
 
@@ -73,10 +76,6 @@ class PlayerData private constructor(
 		}
 	}
 
-	fun getMaxHealth(): Double {
-		return (20 - numDeaths * 2).toDouble()
-	}
-
 	fun canRespawn(): Boolean {
 		return isActive && numDeaths < 10
 	}
@@ -94,9 +93,15 @@ class PlayerData private constructor(
 				0,
 				true,
 				team,
+				20.0
 			)
 			team.members.add(playerData)
 			return playerData
+		}
+
+		fun getNewMaxHealth(shrinkAlong: Double): Double {
+			val exact = MathUtil.lerp(20.0, 4.0, shrinkAlong)
+			return (exact / 2.0).roundToInt() * 2.0
 		}
 	}
 }

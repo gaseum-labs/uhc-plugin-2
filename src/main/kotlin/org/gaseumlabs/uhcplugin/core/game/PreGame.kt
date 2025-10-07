@@ -19,7 +19,7 @@ class PreGame(
 	val startGameTimer = SingleTimerHolder<Timer>()
 
 	companion object {
-		val INITIAL_RADIUS: Int = 512
+		val INITIAL_RADIUS: Int = 384
 		val ENDGAME_RADIUS: Int = 72
 
 		fun createFresh(): PreGame {

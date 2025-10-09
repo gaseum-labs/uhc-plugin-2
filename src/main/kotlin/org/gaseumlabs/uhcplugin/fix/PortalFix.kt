@@ -5,6 +5,7 @@ import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.block.BlockType
+import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerPortalEvent
 import org.gaseumlabs.uhcplugin.core.UHC
@@ -15,6 +16,7 @@ import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.util.MathUtil
 
 class PortalFix : Listener {
+	@EventHandler
 	fun onPortal(event: PlayerPortalEvent) {
 		event.isCancelled = true
 

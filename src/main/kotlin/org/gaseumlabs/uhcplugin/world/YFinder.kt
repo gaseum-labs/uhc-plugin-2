@@ -4,6 +4,7 @@ import org.bukkit.Chunk
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
+import org.bukkit.block.data.type.Snow
 
 object YFinder {
 	fun findTopBlockY(world: World, x: Int, z: Int): Int? {
@@ -30,9 +31,26 @@ object YFinder {
 		return null
 	}
 
-	fun isSurfaceBlock(block: Block): Boolean {
-		if (block.type === Material.WATER) return true
-		if (block.isPassable) return false
+	fun findSurfaceBlock(world: World, x: Int, z: Int): Block {
+		for (y in 255 downTo -64) {
+			val block = world.getBlockAt(x, y, z)
+			if (isSurfaceBlock(block)) return block
+		}
+		return world.getBlockAt(x, -64, z)
+	}
+
+	fun isLiquidBlock(block: Block): Boolean {
+		return when (block.type) {
+			Material.WATER,
+			Material.LAVA,
+			Material.POWDER_SNOW,
+				-> true
+
+			else -> false
+		}
+	}
+
+	fun isTreeBlock(block: Block): Boolean {
 		return when (block.type) {
 			Material.OAK_LEAVES,
 			Material.OAK_LOG,
@@ -55,14 +73,20 @@ object YFinder {
 			Material.BEE_NEST,
 			Material.BAMBOO,
 			Material.PUMPKIN,
+			Material.MELON,
 			Material.POINTED_DRIPSTONE,
-			Material.POWDER_SNOW,
 			Material.PACKED_ICE,
-			Material.SNOW_BLOCK,
 			Material.LILY_PAD,
-				-> false
+				-> true
 
-			else -> true
+			Material.SNOW,
+				-> (block.blockData as Snow).layers > 1
+
+			else -> false
 		}
+	}
+
+	fun isSurfaceBlock(block: Block): Boolean {
+		return isLiquidBlock(block) || (!block.isPassable && !isTreeBlock(block))
 	}
 }

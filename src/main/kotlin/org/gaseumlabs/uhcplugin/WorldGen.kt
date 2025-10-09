@@ -2,12 +2,9 @@ package org.gaseumlabs.uhcplugin
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap
-import net.minecraft.core.Holder
-import net.minecraft.core.HolderOwner
-import net.minecraft.core.MappedRegistry
-import net.minecraft.core.RegistrationInfo
-import net.minecraft.core.Registry
+import net.minecraft.core.*
 import net.minecraft.core.registries.Registries
+import net.minecraft.data.worldgen.features.VegetationFeatures.PATCH_MELON
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.tags.BlockTags
@@ -28,7 +25,8 @@ import net.minecraft.world.level.levelgen.structure.Structure
 import net.minecraft.world.level.levelgen.structure.StructureSet
 import org.bukkit.Bukkit
 import org.bukkit.craftbukkit.CraftServer
-import java.util.IdentityHashMap
+import java.util.*
+import kotlin.jvm.optionals.getOrNull
 
 object WorldGen {
 	fun configureCarvers() {
@@ -44,6 +42,10 @@ object WorldGen {
 
 		for (biomeKey in overworldBiomesList) {
 			val biome = biomeRegistry.getOrThrow(biomeKey).value()
+
+			if (biomeKey === Biomes.JUNGLE) {
+				val g = 4;
+			}
 
 			modifyBiome(biome, uhcCaveCarver)
 		}
@@ -66,10 +68,16 @@ object WorldGen {
 
 		val byId = Reflection.getFieldValue<ObjectArrayList<Holder<StructureSet>>>(mappedRegistry, "byId")
 		val toId = Reflection.getFieldValue<Reference2IntOpenHashMap<StructureSet>>(mappedRegistry, "toId")
-		val byLocation = Reflection.getFieldValue<HashMap<ResourceLocation, Holder<StructureSet>>>(mappedRegistry, "byLocation")
-		val byKey = Reflection.getFieldValue<HashMap<ResourceKey<StructureSet>, Holder<StructureSet>>>(mappedRegistry, "byKey")
-		val byValue = Reflection.getFieldValue<IdentityHashMap<StructureSet, Holder<StructureSet>>>(mappedRegistry, "byValue")
-		val registrationInfos = Reflection.getFieldValue<IdentityHashMap<ResourceKey<StructureSet>, RegistrationInfo>>(mappedRegistry, "registrationInfos")
+		val byLocation =
+			Reflection.getFieldValue<HashMap<ResourceLocation, Holder<StructureSet>>>(mappedRegistry, "byLocation")
+		val byKey =
+			Reflection.getFieldValue<HashMap<ResourceKey<StructureSet>, Holder<StructureSet>>>(mappedRegistry, "byKey")
+		val byValue =
+			Reflection.getFieldValue<IdentityHashMap<StructureSet, Holder<StructureSet>>>(mappedRegistry, "byValue")
+		val registrationInfos = Reflection.getFieldValue<IdentityHashMap<ResourceKey<StructureSet>, RegistrationInfo>>(
+			mappedRegistry,
+			"registrationInfos"
+		)
 
 		val indexId = byId.indexOfFirst { structureSet -> structureSet.value() === netherComplexes }
 
@@ -80,10 +88,10 @@ object WorldGen {
 		byValue.remove(netherComplexes)
 		byValue.set(newStructureSet, newStructureSetHolder)
 
-		val g =3;
+		val g = 3;
 	}
 
-	fun modifyBiome(biome: Biome, uhcCaveCarver: ConfiguredWorldCarver<CaveCarverConfiguration> ) {
+	fun modifyBiome(biome: Biome, uhcCaveCarver: ConfiguredWorldCarver<CaveCarverConfiguration>) {
 		val carvers = biome.generationSettings.carvers
 
 		val carversList = carvers.toMutableList()
@@ -96,6 +104,24 @@ object WorldGen {
 		carversList.add(Holder.Direct(uhcCaveCarver))
 
 		Reflection.setFieldValue(carvers, "contents", carversList.toList())
+
+		val features = biome.generationSettings.features()
+
+		val featuresList = features.map { featureHolder ->
+			val holders = featureHolder.toMutableList()
+
+			val melonIndex = holders.indexOfFirst { holder ->
+				holder.unwrapKey().getOrNull()?.location() == PATCH_MELON.location()
+			}
+
+			if (melonIndex != -1) {
+				holders.removeAt(melonIndex)
+			}
+
+			if (melonIndex == -1) featureHolder else HolderSet.direct(holders)
+		}
+
+		Reflection.setFieldValue(biome.generationSettings, "features", featuresList)
 	}
 
 	fun createCarver(blockRegistry: Registry<Block>): ConfiguredWorldCarver<CaveCarverConfiguration> {

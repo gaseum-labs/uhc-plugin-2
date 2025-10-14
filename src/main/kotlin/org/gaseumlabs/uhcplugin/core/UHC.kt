@@ -28,6 +28,7 @@ import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
 import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
 import org.gaseumlabs.uhcplugin.fix.BorderFix
+import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.help.LobbyTips
 import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
 import org.gaseumlabs.uhcplugin.world.Seed
@@ -214,28 +215,24 @@ object UHC {
 					PlayerSpreader.CONFIG_DEFAULT
 				)
 
-				if (respawnLocation == null) {
-					activeGame.playerRespawnTimers.add(RespawnTimer(playerData.uuid, 1))
-				} else {
-					playerData.executeAction { player ->
-						player.isGlowing
-						PlayerManip.resetPlayer(
-							player,
-							GameMode.SURVIVAL,
-							playerData.maxHealth,
-							respawnLocation
-						)
-					}.onNoZombie {
-						playerData.offlineRecord.onRespawn(
-							OfflineZombie.spawn(
-								playerData.uuid,
-								PlayerCapture.createInitial(
-									respawnLocation,
-									playerData.maxHealth
-								)
+				playerData.executeAction { player ->
+					player.isGlowing
+					PlayerManip.resetPlayer(
+						player,
+						GameMode.SURVIVAL,
+						playerData.maxHealth,
+						respawnLocation
+					)
+				}.onNoZombie {
+					playerData.offlineRecord.onRespawn(
+						OfflineZombie.spawn(
+							playerData.uuid,
+							PlayerCapture.createInitial(
+								respawnLocation,
+								playerData.maxHealth
 							)
 						)
-					}
+					)
 				}
 			}
 		}
@@ -254,6 +251,8 @@ object UHC {
 		}
 
 		BorderFix.tick(activeGame)
+
+		ChatHelp.tick(activeGame)
 	}
 
 	fun activeGameToPostGame(activeGame: ActiveGame, winningTeam: UHCTeam?) {

@@ -17,6 +17,7 @@ import org.gaseumlabs.uhcplugin.fix.PearlFix
 import org.gaseumlabs.uhcplugin.fix.PortalFix
 import org.gaseumlabs.uhcplugin.help.AdvancementEvents
 import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
+import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 import org.gaseumlabs.uhcplugin.world.WorldManager
 
@@ -37,6 +38,7 @@ class UHCPlugin : JavaPlugin() {
 		Bukkit.getPluginManager().registerEvents(BrewFix(), this)
 		Bukkit.getPluginManager().registerEvents(AdvancementEvents(), this)
 		Bukkit.getPluginManager().registerEvents(MelonFix(), this)
+		Bukkit.getPluginManager().registerEvents(ChatHelp(), this)
 
 		AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
 

@@ -6,6 +6,7 @@ import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.entity.Zombie
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
+import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.util.MathUtil
 import java.util.*
 import kotlin.math.roundToInt
@@ -55,6 +56,7 @@ class PlayerData private constructor(
 	var maxHealth: Double,
 ) {
 	var offlineRecord: OfflineRecord = OfflineRecord(null, null, WipeMode.KEEP)
+	val chatHelp = ChatHelp.createInstances()
 
 	fun getPlayer(): Player? {
 		return Bukkit.getServer().getPlayer(uuid)

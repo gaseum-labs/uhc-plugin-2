@@ -11,4 +11,6 @@ object MSG {
 	fun success(text: String): Component = Component.text(text, TextColor.color(0x1cc916))
 
 	fun error(text: String): Component = Component.text(text, TextColor.color(0xe61014))
+
+	fun help(text: String) = Component.text(text, TextColor.color(0x5368f5), TextDecoration.UNDERLINED)
 }

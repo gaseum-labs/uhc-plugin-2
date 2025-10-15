@@ -5,8 +5,15 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
+import io.papermc.paper.entity.TeleportFlag
+import net.minecraft.core.BlockPos
+import net.minecraft.core.registries.Registries
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures
+import net.minecraft.world.level.levelgen.structure.StructureStart
+import net.minecraft.world.phys.Vec2
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemType
 import org.gaseumlabs.uhcplugin.core.PlayerSpreader
@@ -17,6 +24,8 @@ import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 import org.gaseumlabs.uhcplugin.world.SurfaceFinder
 import org.gaseumlabs.uhcplugin.world.YFinder
+import kotlin.math.PI
+import kotlin.math.atan2
 
 object DebugCommands {
 	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
@@ -64,14 +73,62 @@ object DebugCommands {
 
 		val debugNode = Commands.literal("debug")
 
+		val lookCenterNode = Commands.literal("lookcenter")
+		lookCenterNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes(::execLookCenter)
+
+		val inFortressNode = Commands.literal("infortress")
+		inFortressNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes(::execInFortress)
+
 		debugNode.then(blockInfoNode)
 		debugNode.then(findSurfaceNode)
 		debugNode.then(spreadNode)
 		debugNode.then(advancementNode)
 		debugNode.then(serializeNode)
 		debugNode.then(startNode)
+		debugNode.then(lookCenterNode)
+		debugNode.then(inFortressNode)
 
 		uhcNode.then(debugNode)
+	}
+
+	fun execLookCenter(context: CommandContext<CommandSourceStack>): Int {
+		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
+
+		val centerVec = Vec2(0.5f, 0.5f)
+		val playerVec = Vec2(player.location.x.toFloat(), player.location.z.toFloat())
+		val toCenterVec = centerVec.add(playerVec.negated())
+
+		val rotation = (atan2(-toCenterVec.x, toCenterVec.y) / PI.toFloat()) * 180.0f
+
+		player.teleport(
+			player.location.setRotation(rotation, 0.0f),
+			TeleportFlag.Relative.VELOCITY_X,
+			TeleportFlag.Relative.VELOCITY_Y,
+			TeleportFlag.Relative.VELOCITY_Z
+		)
+
+		return Command.SINGLE_SUCCESS
+	}
+
+	fun execInFortress(context: CommandContext<CommandSourceStack>): Int {
+		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
+		val block = player.location.block
+
+		val world = player.world as CraftWorld
+		val structureManager = world.handle.structureManager()
+
+		val registry = world.handle.registryAccess().lookupOrThrow(Registries.STRUCTURE)
+		val fortress = registry.getValueOrThrow(BuiltinStructures.FORTRESS)
+
+		val structureStart = structureManager.getStructureAt(BlockPos(block.x, block.y, block.z), fortress)
+
+		if (structureStart === StructureStart.INVALID_START) {
+			player.sendMessage("no fortress")
+		} else {
+			player.sendMessage("fortress")
+		}
+
+		return Command.SINGLE_SUCCESS
 	}
 
 	fun execSpread(context: CommandContext<CommandSourceStack>): Int {

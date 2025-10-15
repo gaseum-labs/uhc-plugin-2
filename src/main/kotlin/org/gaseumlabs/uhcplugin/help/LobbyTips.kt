@@ -15,9 +15,9 @@ object LobbyTips {
 		"You are immune to fire in grace period",
 		"Horse CHC is not real",
 		"Grace period lasts 20 minutes",
-		"The map size is 512 blocks in every direction",
+		"The map size is 384 blocks in every direction",
 		"The final border radius is 72 blocks",
-		"The border shrinks from 512 to 72 block radius during shrink",
+		"The border shrinks from 384 to 72 block radius during shrink",
 		"You can regenerate health in grace period",
 		"You cannot regenerate health after grace period",
 		"Oxeye daisy is the flower ingredient in regeneration suspicious stew",
@@ -79,11 +79,13 @@ object LobbyTips {
 	fun tick(timer: Int) {
 		if (timer % 20 != 0) return
 
+		val isIncrement = timer % 200 == 0
+
 		val onlinePlayers = Bukkit.getOnlinePlayers().map { it.uniqueId }
 
 		playerTips.removeIf { tips -> onlinePlayers.none { uuid -> tips.uuid == uuid } }
 		playerTips.forEach { tips ->
-			++tips.index
+			if (isIncrement) ++tips.index
 			if (tips.index >= list.size) tips.reset()
 		}
 		playerTips.addAll(

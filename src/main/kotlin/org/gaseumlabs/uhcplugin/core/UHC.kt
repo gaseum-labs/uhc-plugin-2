@@ -57,7 +57,7 @@ object UHC {
 		Display.tick()
 		stage.postTick()
 		++timer
-		if (timer == 20) timer = 0
+		if (timer == 2162160) timer = 0
 	}
 
 	fun lobbyTick(preGame: PreGame) {

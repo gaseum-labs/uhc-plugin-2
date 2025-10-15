@@ -1,6 +1,6 @@
 package org.gaseumlabs.uhcplugin.core.phase
 
-import org.bukkit.Axis
+import net.minecraft.world.phys.Vec2
 import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
@@ -15,6 +15,8 @@ import org.gaseumlabs.uhcplugin.core.timer.TickTime
 import org.gaseumlabs.uhcplugin.core.timer.YDamageTimer
 import org.gaseumlabs.uhcplugin.fix.PortalFix
 import org.gaseumlabs.uhcplugin.util.MathUtil
+import kotlin.math.PI
+import kotlin.math.atan2
 
 class EndgamePhase(val collapseTime: Int, val finalYRange: IntRange) : Phase(PhaseType.ENDGAME) {
 	var warningTimers = MultiTimerHolder<YDamageTimer>()
@@ -29,11 +31,16 @@ class EndgamePhase(val collapseTime: Int, val finalYRange: IntRange) : Phase(Pha
 
 	fun start(activeGame: ActiveGame) {
 		UHCBorder.set(activeGame.gameWorld, activeGame.finalRadius)
+
+		closeNether(activeGame)
+
 		Broadcast.broadcast { player ->
 			if (player.world === activeGame.gameWorld) null
 			else MSG.game("Endgame starting")
 		}
+	}
 
+	fun closeNether(activeGame: ActiveGame) {
 		val netherTeamGroups = activeGame.teams.teams.mapNotNull { team ->
 			val netherPlayersList = team.members.mapNotNull { playerData ->
 				if (!playerData.isActive) return@mapNotNull null
@@ -48,13 +55,21 @@ class EndgamePhase(val collapseTime: Int, val finalYRange: IntRange) : Phase(Pha
 		netherTeamGroups.forEach { (playerDatas, fromBlock) ->
 			val exitBlock = PortalFix.getPortalExitLocation(activeGame.gameWorld, fromBlock)
 
-			PortalFix.buildNetherPortal(exitBlock, Axis.X)
+			PortalFix.buildNetherPortal(exitBlock, PortalFix.getBorderOrientation(exitBlock.x, exitBlock.z))
+
+			val centerVec = Vec2(0.5f, 0.5f)
+			val playerVec = Vec2(exitBlock.x + 0.5f, exitBlock.z + 0.5f)
+			val toCenterVec = centerVec.add(playerVec.negated())
+
+			val rotation = (atan2(-toCenterVec.x, toCenterVec.y) / PI.toFloat()) * 180.0f
+
+			val exitLocation = exitBlock.location.add(0.5, 0.0, 0.5).setRotation(rotation, 0.0f)
 
 			playerDatas.forEach { playerData ->
 				playerData.executeAction { player ->
-					player.teleport(exitBlock.location.add(0.5, 0.0, 0.5))
+					player.teleport(exitLocation)
 				}.onZombie { zombie ->
-					zombie.teleport(exitBlock.location.add(0.5, 0.0, 0.5))
+					zombie.teleport(exitLocation)
 				}
 			}
 		}

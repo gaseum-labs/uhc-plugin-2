@@ -14,6 +14,7 @@ import org.gaseumlabs.uhcplugin.core.broadcast.MSG
 import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.core.phase.EndgamePhase
 import org.gaseumlabs.uhcplugin.util.MathUtil
+import kotlin.math.abs
 
 class PortalFix : Listener {
 	@EventHandler
@@ -103,7 +104,7 @@ class PortalFix : Listener {
 					val mid = if (axis === Axis.X) block.getRelative(main, y, 0) else block.getRelative(0, y, main)
 					val front = if (axis === Axis.X) block.getRelative(main, y, 1) else block.getRelative(1, y, main)
 
-					if (y == 0) {
+					if (y == -1) {
 						mid.setType(Material.OBSIDIAN, false)
 						if (main in 0..1) {
 							if (back.isPassable) back.setType(Material.OBSIDIAN, false)
@@ -121,6 +122,10 @@ class PortalFix : Listener {
 
 				}
 			}
+		}
+
+		fun getBorderOrientation(x: Int, z: Int): Axis {
+			return if (abs(x) > abs(z)) Axis.X else Axis.Z
 		}
 	}
 }

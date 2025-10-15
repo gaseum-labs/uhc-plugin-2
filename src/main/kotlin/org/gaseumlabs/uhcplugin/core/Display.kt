@@ -158,7 +158,7 @@ object Display {
 			}
 		}
 
-		UHC.postGame().let {
+		UHC.postGame()?.let {
 			return DisplayTemplate(
 				Component.text("Post Game"),
 				1.0,
@@ -198,7 +198,9 @@ object Display {
 				playerBar.name()
 			}
 
+
 			if (template?.title != null) player.showTitle(template.title)
+			template?.actionBar?.let { actionBar -> player.sendActionBar(actionBar) }
 		}
 	}
 

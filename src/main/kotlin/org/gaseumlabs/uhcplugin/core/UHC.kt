@@ -250,6 +250,9 @@ object UHC {
 			activeGame.endgamePhase.tick(activeGame, phaseAlong)
 		}
 
+
+		activeGame.lootRegen.tick(timer, activeGame)
+
 		BorderFix.tick(activeGame)
 
 		ChatHelp.tick(activeGame)

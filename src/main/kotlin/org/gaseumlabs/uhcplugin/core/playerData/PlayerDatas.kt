@@ -2,6 +2,8 @@ package org.gaseumlabs.uhcplugin.core.playerData
 
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Entity
+import org.bukkit.entity.HumanEntity
+import org.bukkit.entity.Player
 import org.bukkit.entity.Zombie
 import java.util.*
 
@@ -13,7 +15,15 @@ class PlayerDatas(
 		return uuidToData[uuid]
 	}
 
+	fun get(player: Player): PlayerData? {
+		return uuidToData[player.uniqueId]
+	}
+
 	fun get(player: OfflinePlayer): PlayerData? {
+		return uuidToData[player.uniqueId]
+	}
+
+	fun get(player: HumanEntity): PlayerData? {
 		return uuidToData[player.uniqueId]
 	}
 

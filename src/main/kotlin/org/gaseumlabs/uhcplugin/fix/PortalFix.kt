@@ -108,7 +108,7 @@ class PortalFix : Listener {
 						mid.setType(Material.OBSIDIAN, false)
 						if (main in 0..1) {
 							if (back.isPassable) back.setType(Material.OBSIDIAN, false)
-							if (front.isPassable) back.setType(Material.OBSIDIAN, false)
+							if (front.isPassable) front.setType(Material.OBSIDIAN, false)
 						}
 					} else {
 						if (main in 0..1 && y < 3) {

@@ -10,6 +10,7 @@ import org.gaseumlabs.uhcplugin.core.record.Ledger
 import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
 import org.gaseumlabs.uhcplugin.core.timer.MultiTimerHolder
 import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
+import org.gaseumlabs.uhcplugin.lootRegen.LootRegen
 import java.time.LocalDate
 
 class ActiveGame(
@@ -28,6 +29,7 @@ class ActiveGame(
 	val playerRespawnTimers = MultiTimerHolder<RespawnTimer>()
 	val startDate = LocalDate.now()
 	var timer: Int = 0
+	val lootRegen = LootRegen()
 
 	override fun destroy() {
 		super.destroy()

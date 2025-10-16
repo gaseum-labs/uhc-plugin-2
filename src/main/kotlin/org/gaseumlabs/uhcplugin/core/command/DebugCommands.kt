@@ -6,22 +6,19 @@ import com.mojang.brigadier.context.CommandContext
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.entity.TeleportFlag
-import net.minecraft.core.BlockPos
-import net.minecraft.core.registries.Registries
-import net.minecraft.world.level.levelgen.structure.BuiltinStructures
-import net.minecraft.world.level.levelgen.structure.StructureStart
 import net.minecraft.world.phys.Vec2
 import org.bukkit.Bukkit
 import org.bukkit.Material
-import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemType
 import org.gaseumlabs.uhcplugin.core.PlayerSpreader
 import org.gaseumlabs.uhcplugin.core.UHC
 import org.gaseumlabs.uhcplugin.core.UHCBorder
+import org.gaseumlabs.uhcplugin.core.broadcast.MSG
 import org.gaseumlabs.uhcplugin.core.game.StartGameMode
 import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
+import org.gaseumlabs.uhcplugin.util.WorldUtil
 import org.gaseumlabs.uhcplugin.world.SurfaceFinder
 import org.gaseumlabs.uhcplugin.world.YFinder
 import kotlin.math.PI
@@ -114,18 +111,10 @@ object DebugCommands {
 		val player = CommandUtil.getSenderPlayer(context) ?: return CommandUtil.notPlayerError(context)
 		val block = player.location.block
 
-		val world = player.world as CraftWorld
-		val structureManager = world.handle.structureManager()
-
-		val registry = world.handle.registryAccess().lookupOrThrow(Registries.STRUCTURE)
-		val fortress = registry.getValueOrThrow(BuiltinStructures.FORTRESS)
-
-		val structureStart = structureManager.getStructureAt(BlockPos(block.x, block.y, block.z), fortress)
-
-		if (structureStart === StructureStart.INVALID_START) {
-			player.sendMessage("no fortress")
+		if (WorldUtil.isFortressAt(player.world, block.x, block.y, block.z)) {
+			player.sendMessage(MSG.success("no fortress"))
 		} else {
-			player.sendMessage("fortress")
+			player.sendMessage(MSG.success("fortress"))
 		}
 
 		return Command.SINGLE_SUCCESS

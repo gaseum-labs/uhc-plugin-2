@@ -22,7 +22,8 @@ object SummaryMessage {
 					if (player.win) "Winner" else null,
 					if (player.numKills == 1) "1 kill" else null,
 					if (player.numKills > 1) "${player.numKills} kills" else null,
-					if (!player.alive) "Killed by " else null
+					if (!player.alive && player.killedBy != null) "Killed by ${player.killedBy}" else null,
+					if (!player.alive && player.killedBy == null) "Killed by environment" else null
 				).joinToString("\n"),
 				false
 			)

@@ -75,7 +75,7 @@ object DebugCommands {
 
 		val inFortressNode = Commands.literal("infortress")
 		inFortressNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes(::execInFortress)
-
+		
 		debugNode.then(blockInfoNode)
 		debugNode.then(findSurfaceNode)
 		debugNode.then(spreadNode)

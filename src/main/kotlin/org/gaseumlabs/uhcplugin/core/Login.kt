@@ -7,6 +7,8 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
+import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
+import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 
 class Login : Listener {
 	@EventHandler
@@ -14,6 +16,8 @@ class Login : Listener {
 		val player = event.player
 		val game = UHC.activeGame() ?: return
 		val playerData = game.playerDatas.get(player) ?: return
+
+		PlayerAdvancement.grant(player, UHCAdvancements.UHC)
 
 		val offlineRecord = playerData.offlineRecord
 

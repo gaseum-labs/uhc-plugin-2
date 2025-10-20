@@ -19,7 +19,7 @@ import org.gaseumlabs.uhcplugin.help.AdvancementEvents
 import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
-import org.gaseumlabs.uhcplugin.lootRegen.LootRegenEvents
+import org.gaseumlabs.uhcplugin.regenResource.RegenResourceEvents
 import org.gaseumlabs.uhcplugin.world.WorldManager
 
 class UHCPlugin : JavaPlugin() {
@@ -40,7 +40,7 @@ class UHCPlugin : JavaPlugin() {
 		Bukkit.getPluginManager().registerEvents(AdvancementEvents(), this)
 		Bukkit.getPluginManager().registerEvents(MelonFix(), this)
 		Bukkit.getPluginManager().registerEvents(ChatHelp(), this)
-		Bukkit.getPluginManager().registerEvents(LootRegenEvents(), this)
+		Bukkit.getPluginManager().registerEvents(RegenResourceEvents(), this)
 
 		AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
 

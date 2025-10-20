@@ -2,6 +2,7 @@ package org.gaseumlabs.uhcplugin.help
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemType
 import org.bukkit.potion.PotionType
 import org.gaseumlabs.uhcplugin.UHCPlugin
@@ -66,7 +67,7 @@ object UHCAdvancements {
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.SAND)
 	)
 
-	val UHC_MELON = UHC_SAND.append(
+	val UHC_MELON = UHC_WOOD.append(
 		key = UHCPlugin.key("uhc_melon"),
 		icon = ItemType.MELON_SLICE.createItemStack(),
 		title = Component.text("Pink Pill"),
@@ -122,6 +123,28 @@ object UHCAdvancements {
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.OBSIDIAN)
 	)
 
+	val UHC_ENCHANTING_TABLE = UHC_OBSIDIAN.append(
+		key = UHCPlugin.key("uhc_enchanting_table"),
+		icon = ItemType.ENCHANTING_TABLE.createItemStack(),
+		title = Component.text("Enchanting Table"),
+		description = Component.text("Craft an enchanting table."),
+		criteria = UHCAdvancement.Criteria.obtainItemList(Material.ENCHANTING_TABLE)
+	)
+
+	val UHC_SHARP_AXE = UHC_ENCHANTING_TABLE.append(
+		key = UHCPlugin.key("uhc_sharp_axe"),
+		icon = ItemType.DIAMOND_AXE.createItemStack { meta -> meta.addEnchant(Enchantment.SHARPNESS, 1, true) },
+		title = Component.text("Sharp Axe"),
+		description = Component.text("Use an enchanted book and anvil to put sharpness on an axe"),
+		criteria = UHCAdvancement.Criteria.obtainItem(ItemType.DIAMOND_AXE.createItemStack { meta ->
+			meta.addEnchant(
+				Enchantment.SHARPNESS,
+				1,
+				true
+			)
+		})
+	)
+
 	val UHC_NETHER = UHC_OBSIDIAN.append(
 		key = UHCPlugin.key("uhc_nether"),
 		icon = ItemType.NETHERRACK.createItemStack(),
@@ -169,5 +192,29 @@ object UHCAdvancements {
 			Material.DIAMOND_LEGGINGS,
 			Material.DIAMOND_BOOTS,
 		)
+	)
+
+	val list = listOf(
+		UHC,
+		UHC_WOOD,
+		UHC_APPLE,
+		UHC_FOOD,
+		UHC_LEATHER,
+		UHC_CANE,
+		UHC_SAND,
+		UHC_MELON,
+		UHC_IRON,
+		UHC_GOLD,
+		UHC_GLISTERING_MELON,
+		UHC_GOLDEN_APPLE,
+		UHC_DIAMOND,
+		UHC_OBSIDIAN,
+		UHC_ENCHANTING_TABLE,
+		UHC_SHARP_AXE,
+		UHC_NETHER,
+		UHC_BLAZE_ROD,
+		UHC_NETHER_WART,
+		UHC_HEALING_2,
+		UHC_FULL_DIAMOND
 	)
 }

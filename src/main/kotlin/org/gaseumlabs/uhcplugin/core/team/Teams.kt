@@ -38,7 +38,7 @@ open class Teams<T : PreTeam>(teams: List<T>, val teamConstructor: TeamConstruct
 		list.addAll((0..<numTeams).map { index ->
 			val uuid = UUID.randomUUID()
 			val color = colors[index]
-			val teamName = "Team ${index + 1}"
+			val teamName = "Team ${color.mineralName}"
 
 			val team = Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam(uuid.toString())
 			adjustMinecraftTeam(team, teamName, color)
@@ -147,6 +147,15 @@ open class Teams<T : PreTeam>(teams: List<T>, val teamConstructor: TeamConstruct
 				true
 			} else {
 				false
+			}
+		}
+	}
+
+	companion object {
+		fun cleanup() {
+			val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
+			ArrayList(scoreboard.teams).forEach { team ->
+				team.unregister()
 			}
 		}
 	}

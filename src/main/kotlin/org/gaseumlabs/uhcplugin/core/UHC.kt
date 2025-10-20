@@ -22,6 +22,7 @@ import org.gaseumlabs.uhcplugin.core.protocol.UHCProtocol
 import org.gaseumlabs.uhcplugin.core.record.LedgerKill
 import org.gaseumlabs.uhcplugin.core.record.Summary
 import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
+import org.gaseumlabs.uhcplugin.core.team.Teams
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import org.gaseumlabs.uhcplugin.core.timer.CountdownTimer
 import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
@@ -31,6 +32,7 @@ import org.gaseumlabs.uhcplugin.fix.BorderFix
 import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.help.LobbyTips
 import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
+import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 import org.gaseumlabs.uhcplugin.world.Seed
 import org.gaseumlabs.uhcplugin.world.UHCWorldType
 import org.gaseumlabs.uhcplugin.world.WorldManager
@@ -44,6 +46,8 @@ object UHC {
 
 	fun init() {
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(UHCPlugin.self, UHC::tick, 0, 1)
+		HealthObjective.init()
+		Teams.cleanup()
 	}
 
 	fun tick() {
@@ -88,6 +92,8 @@ object UHC {
 		this.stage = PreGame.createFresh()
 
 		CommandUtil.updatePlayers()
+
+		GameRunnerBot.instance?.destroyVoiceChannels()
 	}
 
 	fun moveAllToLobby(game: Game) {
@@ -175,6 +181,7 @@ object UHC {
 					playerData.maxHealth,
 					location
 				)
+				PlayerAdvancement.grant(player, UHCAdvancements.UHC)
 			}.onNoZombie {
 				playerData.offlineRecord.onGameSpawn(
 					OfflineZombie.spawn(
@@ -196,6 +203,10 @@ object UHC {
 				UHCProtocol.untrackAllPlayers(player, activeGame)
 			}
 		}
+
+		GameRunnerBot.instance?.createVoiceChannels(activeTeams.teams.associate { team ->
+			team.uuid to team.memberUUIDs
+		})
 	}
 
 	fun getAutoTeamSize(preGame: PreGame): Int {
@@ -250,7 +261,6 @@ object UHC {
 			activeGame.endgamePhase.tick(activeGame, phaseAlong)
 		}
 
-
 		activeGame.lootRegen.tick(timer, activeGame)
 
 		BorderFix.tick(activeGame)
@@ -273,6 +283,7 @@ object UHC {
 		val summary = Summary.create(
 			activeGame,
 			winningTeam,
+			Summary.createUUIDToName()
 		)
 
 		GameRunnerBot.instance?.sendSummaryMessage(summary)
@@ -321,12 +332,12 @@ object UHC {
 			true
 		}
 
+		Broadcast.broadcastGame(activeGame, deathMessage)
+
 		if (!isElimination) return
 
 		val isTeamKill = killerUuid?.let { activeGame.playerDatas.get(it)?.team } === playerData.team
 		activeGame.ledger.kills.add(LedgerKill(activeGame.timer, playerData.uuid, if (isTeamKill) null else killerUuid))
-
-		Broadcast.broadcastGame(activeGame, deathMessage)
 
 		onPlayerEliminate(activeGame, playerData)
 	}

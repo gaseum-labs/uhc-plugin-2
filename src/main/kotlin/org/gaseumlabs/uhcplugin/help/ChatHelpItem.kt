@@ -49,12 +49,6 @@ enum class ChatHelpItem(val message: String, val requirements: List<ChatHelpRequ
 			RadiusRangeRequirement(128..1000)
 		)
 	),
-	HAS_BLAZE_ROD(
-		"Nether wart generates in patches of 1 in all nether biomes", listOf(
-			DimensionRequirement(World.Environment.NETHER),
-			HasItemRequirement(Material.BLAZE_ROD)
-		)
-	),
 	IN_PLAINS(
 		"Oxeye daisies generate in plains biomes. They can be used to craft regeneration suspicious stew", listOf(
 			InBiomeRequirement(Biome.PLAINS)

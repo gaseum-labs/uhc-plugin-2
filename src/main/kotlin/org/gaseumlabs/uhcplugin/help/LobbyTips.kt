@@ -23,7 +23,7 @@ object LobbyTips {
 		"Oxeye daisy is the flower ingredient in regeneration suspicious stew",
 		"Glistering melons are used to brew potions of instant health",
 		"There is always a nether fortress in the center of the nether",
-		"Nether wart generates randomly in the nether",
+		"Collect nether wart from chests in the fortress",
 		"There is a y level border that shrinks in endgame",
 		"Shrink lasts 20 minutes",
 		"The game is over when only one team survives",

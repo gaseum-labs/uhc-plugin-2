@@ -5,6 +5,7 @@ import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.entity.Zombie
+import org.gaseumlabs.uhcplugin.core.team.SummaryTeam
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.util.MathUtil
@@ -54,7 +55,7 @@ class PlayerData private constructor(
 	var isActive: Boolean,
 	var team: UHCTeam,
 	var maxHealth: Double,
-) {
+) : SummaryPlayerData {
 	var offlineRecord: OfflineRecord = OfflineRecord(null, null, WipeMode.KEEP)
 	val chatHelp = ChatHelp.createInstances()
 
@@ -88,6 +89,9 @@ class PlayerData private constructor(
 		offlineRecord = OfflineRecord(null, null, WipeMode.KEEP)
 	}
 
+	override fun team(): SummaryTeam = team
+	override fun uuid(): UUID = uuid
+
 	companion object {
 		fun createInitial(uuid: UUID, team: UHCTeam): PlayerData {
 			val playerData = PlayerData(
@@ -107,4 +111,3 @@ class PlayerData private constructor(
 		}
 	}
 }
-

@@ -23,12 +23,17 @@ dependencies {
 	paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
 	implementation("com.dbeaver.jdbc:com.dbeaver.jdbc.driver.libsql:1.0.4")
 	compileOnly("net.dmulloy2:ProtocolLib:5.4.0")
+	testImplementation(kotlin("test"))
 }
 
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
 tasks.assemble {
 	dependsOn(tasks.reobfJar)
+}
+
+tasks.test {
+	useJUnitPlatform()
 }
 
 kotlin {

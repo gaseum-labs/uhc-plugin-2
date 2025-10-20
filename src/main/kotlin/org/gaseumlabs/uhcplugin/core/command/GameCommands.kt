@@ -14,6 +14,7 @@ import org.gaseumlabs.uhcplugin.core.game.PostGame
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerCapture
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
+import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
 
 object GameCommands {
 	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
@@ -165,7 +166,7 @@ object GameCommands {
 			activeGame.gameWorld,
 			UHCBorder.getBorderRadius(activeGame.gameWorld.worldBorder),
 			PlayerSpreader.CONFIG_DEFAULT
-		) ?: activeGame.gameWorld.spawnLocation
+		)
 
 		playerData.executeAction { player ->
 			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, playerData.maxHealth, location)
@@ -175,6 +176,8 @@ object GameCommands {
 				PlayerCapture.createInitial(location, playerData.maxHealth)
 			)
 		}
+
+		GameRunnerBot.instance?.addVoiceChannel(playerData.team.uuid, playerData.uuid)
 
 		CommandUtil.successMessage(context, "${player.name} added late to the game")
 

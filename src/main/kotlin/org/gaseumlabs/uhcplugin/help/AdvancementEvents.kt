@@ -19,6 +19,14 @@ class AdvancementEvents : Listener {
 	fun onAdvancement(event: PlayerAdvancementCriterionGrantEvent) {
 		if (getPlayerData(event.player) == null) {
 			event.isCancelled = true
+			return
+		}
+
+		if (!UHCAdvancements.list.any { advancement ->
+				advancement.key == event.advancement.key()
+			}) {
+			event.isCancelled = true
+			return
 		}
 	}
 

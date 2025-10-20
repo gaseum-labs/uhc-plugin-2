@@ -25,6 +25,8 @@ import java.util.concurrent.CompletableFuture
 
 class GameRunnerBot(private val api: JDA, private val config: Config) : ListenerAdapter() {
 	fun init(): CompletableFuture<Void> {
+		destroyVoiceChannels()
+
 		return uhcGuild.updateCommands().addCommands(
 			Commands.slash("setsummarychannel", "Sets the summary channel")
 				.addOption(OptionType.CHANNEL, "channel", "The summary channel", true)

@@ -40,6 +40,14 @@ kotlin {
 	jvmToolchain(21)
 }
 
+tasks.jar {
+	enabled = false
+}
+
+tasks.shadowJar {
+	archiveFileName = "UHCPlugin2.jar"
+}
+
 tasks {
 	runServer {
 		// Configure the Minecraft version for our task.

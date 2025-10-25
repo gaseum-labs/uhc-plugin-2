@@ -171,6 +171,8 @@ object UHC {
 			isRanked
 		)
 
+		PlayerAdvancement.wipe(Bukkit.getOnlinePlayers())
+
 		activeGame.playerDatas.active.forEach { playerData ->
 			val location = preGame.playerUUIDToLocation.get(playerData.uuid)!!
 
@@ -191,8 +193,6 @@ object UHC {
 				)
 			}
 		}
-
-		PlayerAdvancement.wipe(Bukkit.getOnlinePlayers())
 
 		this.stage = activeGame
 

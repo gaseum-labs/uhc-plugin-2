@@ -22,64 +22,64 @@ class BrewFix : Listener {
 			val potionEffect = when (potionMeta.basePotionType) {
 				PotionType.POISON ->
 					PotionEffect(
-						PotionEffectType.WEAKNESS,
+						PotionEffectType.POISON,
 						TickTime.poisonHealth(9),
-						1
+						0
 					)
 
 				PotionType.STRONG_POISON ->
 					PotionEffect(
-						PotionEffectType.WEAKNESS,
+						PotionEffectType.POISON,
 						TickTime.poison2Health(14),
 						1
 					)
 
 				PotionType.LONG_POISON ->
 					PotionEffect(
-						PotionEffectType.WEAKNESS,
+						PotionEffectType.POISON,
 						TickTime.poisonHealth(16),
-						1
+						0
 					)
 
 				PotionType.REGENERATION ->
 					PotionEffect(
-						PotionEffectType.WEAKNESS,
+						PotionEffectType.REGENERATION,
 						TickTime.regenerationHealth(6),
-						1
+						0
 					)
 
 				PotionType.STRONG_REGENERATION ->
 					PotionEffect(
-						PotionEffectType.WEAKNESS,
+						PotionEffectType.REGENERATION,
 						TickTime.regeneration2Health(10),
 						1
 					)
 
 				PotionType.LONG_REGENERATION ->
 					PotionEffect(
-						PotionEffectType.WEAKNESS,
+						PotionEffectType.REGENERATION,
 						TickTime.regenerationHealth(13),
-						1
+						0
 					)
 
 				PotionType.WEAKNESS ->
 					PotionEffect(
 						PotionEffectType.WEAKNESS,
 						TickTime.ofSeconds(30),
-						1
+						0
 					)
 
 				PotionType.LONG_WEAKNESS ->
 					PotionEffect(
 						PotionEffectType.WEAKNESS,
 						TickTime.ofSeconds(60),
-						1
+						0
 					)
 
 				else -> null
 			}
 
-			potionEffect?.let { potionMeta.addCustomEffect(it, false) }
+			potionEffect?.let { potionMeta.addCustomEffect(it, true) }
 
 			itemStack.itemMeta = potionMeta
 		}

@@ -1,15 +1,16 @@
 package org.gaseumlabs.uhcplugin.discord
 
-import com.google.gson.Gson
-import java.io.File
+import kotlinx.serialization.Serializable
+import org.gaseumlabs.uhcplugin.dataStore.DataStore
 import java.util.*
 
+@Serializable
 data class Config(
 	val token: String,
 	val guildId: Long,
 	var summaryChannelId: Long?,
 	var voiceChannelId: Long?,
-	val playerToUser: HashMap<UUID, Long>,
+	val playerToUser: HashMap<@Serializable(DataStore.UUIDSerializer::class) UUID, Long>,
 ) {
 	fun getLinkByUser(id: Long): UUID? {
 		return playerToUser.entries.find { entry -> entry.value == id }?.key
@@ -25,38 +26,18 @@ data class Config(
 	}
 
 	companion object {
-		val gson = Gson()
+		const val FILENAME = "discord-config.json"
 
-		const val FILENAME = "discord_config.txt"
+		fun read(): Config = DataStore.read(FILENAME, ::createDefault)
 
-		fun read(): Config? {
-			val file = File(FILENAME)
+		fun write(config: Config) = DataStore.write(FILENAME, config)
 
-			if (!file.exists()) {
-				file.writeText(
-					gson.toJson(
-						Config(
-							"",
-							-1L,
-							null,
-							null,
-							HashMap()
-						)
-					)
-				)
-				return null
-			}
-
-			return try {
-				gson.fromJson(file.reader(), Config::class.java)
-			} catch (ex: Exception) {
-				null
-			}
-		}
-
-		fun write(config: Config) {
-			val file = File(FILENAME)
-			file.writeText(gson.toJson(config))
-		}
+		fun createDefault() = Config(
+			"",
+			-1L,
+			null,
+			null,
+			HashMap()
+		)
 	}
 }

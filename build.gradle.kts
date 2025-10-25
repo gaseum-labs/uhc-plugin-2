@@ -3,6 +3,7 @@ plugins {
 	id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
 	id("xyz.jpenilla.run-paper") version "2.3.1"
 	id("com.gradleup.shadow") version "9.0.2"
+	kotlin("plugin.serialization") version "2.2.0"
 }
 
 group = "org.example"
@@ -24,6 +25,7 @@ dependencies {
 	implementation("com.dbeaver.jdbc:com.dbeaver.jdbc.driver.libsql:1.0.4")
 	compileOnly("net.dmulloy2:ProtocolLib:5.4.0")
 	testImplementation(kotlin("test"))
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 }
 
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION

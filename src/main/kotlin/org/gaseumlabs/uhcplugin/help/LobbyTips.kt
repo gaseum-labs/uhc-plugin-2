@@ -58,7 +58,8 @@ object LobbyTips {
 		"If an opponent hides behind their Shield, consider enchanting a Crossbow with Piercing!",
 		"If you want to stay hidden while in inventories, enable Sneak: Toggle in Accessibility Settings!",
 		"To save a location or regroup with your teammate, use /sharecoords to show your location in team chat!",
-		"To avoid adding Potion ingredients by hand, place a Hopper above your Brewing Stand!"
+		"To avoid adding Potion ingredients by hand, place a Hopper above your Brewing Stand!",
+		"Place a door to breathe underwater",
 	)
 
 	data class PlayerTips(val uuid: UUID, var index: Int, val order: IntArray) {

@@ -9,6 +9,7 @@ import org.bukkit.entity.Zombie
 import org.bukkit.potion.PotionEffect
 import org.gaseumlabs.uhcplugin.UHCPlugin
 import org.gaseumlabs.uhcplugin.core.playerData.WipeMode
+import org.gaseumlabs.uhcplugin.fix.RecipeFix
 import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
 
 object PlayerManip {
@@ -34,6 +35,8 @@ object PlayerManip {
 		player.absorptionAmount = 0.0
 
 		player.clearActivePotionEffects()
+
+		player.discoverRecipes(RecipeFix.allRecipes)
 
 		player.teleport(location)
 	}

@@ -4,6 +4,8 @@ import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Biome
 import org.bukkit.entity.Player
+import org.gaseumlabs.uhcplugin.core.UHC
+import org.gaseumlabs.uhcplugin.core.phase.PhaseType
 
 interface ChatHelpRequirement
 
@@ -71,5 +73,20 @@ class RadiusRangeRequirement(val radiusRange: IntRange) : TickChatHelpRequiremen
 	override fun check(player: Player): Boolean {
 		val block = player.location.block
 		return block.x in radiusRange || block.z in radiusRange
+	}
+}
+
+class AirRequirement(val airLevel: IntRange) : TickChatHelpRequirement {
+	override fun check(player: Player): Boolean {
+		return player.remainingAir in airLevel
+	}
+}
+
+class GameTimeRequirement(val phaseType: PhaseType, val timeRemaining: Int) : TickChatHelpRequirement {
+	override fun check(player: Player): Boolean {
+		val phaseAlong = UHC.activeGame()?.getPhaseAlong() ?: return false
+		if (phaseAlong.phase.type !== phaseType) return false
+
+		return phaseAlong.duration - phaseAlong.timer <= timeRemaining
 	}
 }

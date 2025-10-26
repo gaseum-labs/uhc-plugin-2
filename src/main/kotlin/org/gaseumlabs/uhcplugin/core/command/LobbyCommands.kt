@@ -217,9 +217,10 @@ object LobbyCommands {
 	private fun execSetMinReadyPlayers(context: CommandContext<CommandSourceStack>): Int {
 		val value = context.getArgument("value", Int::class.java)
 
-		val pregame = UHC.preGame() ?: return CommandUtil.error(context, "Game has already started")
-
-		pregame.minReadyPlayers = value
+		val gameConfig = UHC.gameConfig
+		
+		gameConfig.minReadyPlayers = value
+		gameConfig.write()
 
 		CommandUtil.successMessage(context, "Min ready players set to $value")
 

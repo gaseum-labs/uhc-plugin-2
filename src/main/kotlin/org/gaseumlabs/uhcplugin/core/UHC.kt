@@ -29,6 +29,7 @@ import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
 import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
 import org.gaseumlabs.uhcplugin.fix.BorderFix
+import org.gaseumlabs.uhcplugin.fix.RecipeFix
 import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.help.LobbyTips
 import org.gaseumlabs.uhcplugin.help.PlayerAdvancement
@@ -39,15 +40,18 @@ import org.gaseumlabs.uhcplugin.world.WorldManager
 import java.util.*
 
 object UHC {
-	private var stage: Stage = PreGame.createFresh()
+	val gameConfig = GameConfig.read()
+	private var stage: Stage = PreGame.create()
 
 	val RESPAWN_TIME = TickTime.ofSeconds(15)
 	var timer = 0
 
 	fun init() {
+		WorldManager.init()
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(UHCPlugin.self, UHC::tick, 0, 1)
 		HealthObjective.init()
 		Teams.cleanup()
+		RecipeFix.init()
 	}
 
 	fun tick() {
@@ -69,14 +73,14 @@ object UHC {
 
 		val result = preGame.startGameTimer.get()
 		if (result == null) {
-			if (numReadyPlayers >= preGame.minReadyPlayers && preGame.startGameMode === StartGameMode.READY) {
+			if (numReadyPlayers >= gameConfig.minReadyPlayers && preGame.startGameMode === StartGameMode.READY) {
 				preGame.startGameTimer.set(CountdownTimer(TickTime.ofSeconds(10)))
 				Broadcast.broadcast(MSG.game("Game starting in 2 minutes"))
 			}
 		} else {
 			if (preGame.startGameMode !== StartGameMode.READY) {
 				preGame.startGameTimer.cancel()
-			} else if (numReadyPlayers < preGame.minReadyPlayers) {
+			} else if (numReadyPlayers < gameConfig.minReadyPlayers) {
 				preGame.startGameTimer.cancel()
 				Broadcast.broadcast(MSG.game("Game cancelled because not enough players are ready"))
 			} else if (result.isDone()) {
@@ -89,7 +93,7 @@ object UHC {
 		moveAllToLobby(game)
 		game.destroy()
 
-		this.stage = PreGame.createFresh()
+		this.stage = PreGame.create()
 
 		CommandUtil.updatePlayers()
 
@@ -123,10 +127,10 @@ object UHC {
 		val gameWorld = WorldManager.createWorld(UHCWorldType.GAME, Seed.goodSeedList.random(), true)
 		val netherWorld = WorldManager.createWorld(UHCWorldType.NETHER, null, true)
 
-		val borderRadius = PreGame.INITIAL_RADIUS
-		val finalRadius = PreGame.ENDGAME_RADIUS
+		val borderRadius = gameConfig.initialRadius
+		val finalRadius = gameConfig.endgameRadius
 
-		val finalYRange = VerticalBorder.getFinalYRange(gameWorld, finalRadius, preGame.gameConfig.finalYLevels)
+		val finalYRange = VerticalBorder.getFinalYRange(gameWorld, finalRadius, gameConfig.finalYLevels)
 
 		val isRanked = activeTeams.teams.sumOf { team -> team.memberUUIDs.size } > 6
 
@@ -158,11 +162,13 @@ object UHC {
 			}
 		})
 
+		PlayerAdvancement.wipe(Bukkit.getOnlinePlayers())
+
 		val activeGame = ActiveGame(
 			playerDatas = playerDatas,
-			gracePhase = Grace(preGame.gameConfig.graceDuration),
-			shrinkPhase = Shrink(preGame.gameConfig.shrinkDuration),
-			endgamePhase = EndgamePhase(preGame.gameConfig.collapseTime, finalYRange),
+			gracePhase = Grace(gameConfig.graceDuration),
+			shrinkPhase = Shrink(gameConfig.shrinkDuration),
+			endgamePhase = EndgamePhase(gameConfig.collapseTime, finalYRange),
 			borderRadius,
 			finalRadius,
 			gameWorld,
@@ -171,7 +177,7 @@ object UHC {
 			isRanked
 		)
 
-		PlayerAdvancement.wipe(Bukkit.getOnlinePlayers())
+		this.stage = activeGame
 
 		activeGame.playerDatas.active.forEach { playerData ->
 			val location = preGame.playerUUIDToLocation.get(playerData.uuid)!!
@@ -193,8 +199,6 @@ object UHC {
 				)
 			}
 		}
-
-		this.stage = activeGame
 
 		CommandUtil.updatePlayers()
 

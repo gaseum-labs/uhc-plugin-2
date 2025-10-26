@@ -35,6 +35,7 @@ object Display {
 		if (player.world === WorldManager.lobby) {
 			val preGame = UHC.preGame()
 			val startGameTimer = preGame?.startGameTimer?.get()
+			val gameConfig = UHC.gameConfig
 
 			val lobbyTip = LobbyTips.getPlayerTip(player.uniqueId)?.let { MSG.game(it) }
 
@@ -58,8 +59,8 @@ object Display {
 				)
 			} else if (startGameTimer == null) {
 				DisplayTemplate(
-					Component.text("UHC Lobby - ${preGame.numReadyPlayers()} out of ${preGame.minReadyPlayers} players ready"),
-					preGame.numReadyPlayers() / preGame.minReadyPlayers.toDouble(),
+					Component.text("UHC Lobby - ${preGame.numReadyPlayers()} out of ${gameConfig.minReadyPlayers} players ready"),
+					preGame.numReadyPlayers() / gameConfig.minReadyPlayers.toDouble(),
 					BossBar.Color.WHITE,
 					BossBar.Overlay.PROGRESS,
 					null,

@@ -27,17 +27,14 @@ import kotlin.math.atan2
 object DebugCommands {
 	fun build(uhcNode: LiteralArgumentBuilder<CommandSourceStack>) {
 		val advancementNode = Commands.literal("advancement")
-
-		advancementNode.then(
+		advancementNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes {
+			AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
+			return@executes Command.SINGLE_SUCCESS
+		}.then(
 			Commands.literal("register")
-				.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes {
-					AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
-					return@executes Command.SINGLE_SUCCESS
-				}
 		)
 
 		val serializeNode = Commands.literal("serialize")
-
 		serializeNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes {
 			val itemStack = ItemType.IRON_SWORD.createItemStack { meta ->
 				meta.addEnchant(Enchantment.SHARPNESS, 2, true)
@@ -68,14 +65,14 @@ object DebugCommands {
 		val blockInfoNode = Commands.literal("blockinfo")
 		blockInfoNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes(::execBlockInfo)
 
-		val debugNode = Commands.literal("debug")
-
 		val lookCenterNode = Commands.literal("lookcenter")
 		lookCenterNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes(::execLookCenter)
 
 		val inFortressNode = Commands.literal("infortress")
 		inFortressNode.requires(CommandUtil.makeRequires(RequiresFlag.OP)).executes(::execInFortress)
-		
+
+		val debugNode = Commands.literal("debug")
+
 		debugNode.then(blockInfoNode)
 		debugNode.then(findSurfaceNode)
 		debugNode.then(spreadNode)

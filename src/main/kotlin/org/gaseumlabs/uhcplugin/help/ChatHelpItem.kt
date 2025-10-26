@@ -3,6 +3,8 @@ package org.gaseumlabs.uhcplugin.help
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Biome
+import org.gaseumlabs.uhcplugin.core.phase.PhaseType
+import org.gaseumlabs.uhcplugin.core.timer.TickTime
 
 enum class ChatHelpItem(val message: String, val requirements: List<ChatHelpRequirement>) {
 	FIND_MELON(
@@ -52,6 +54,16 @@ enum class ChatHelpItem(val message: String, val requirements: List<ChatHelpRequ
 	IN_PLAINS(
 		"Oxeye daisies generate in plains biomes. They can be used to craft regeneration suspicious stew", listOf(
 			InBiomeRequirement(Biome.PLAINS)
+		)
+	),
+	UNDERWATER(
+		"Craft a door to create a breathable pocket of air underwater", listOf(
+			AirRequirement(0..TickTime.ofSeconds(10))
+		)
+	),
+	GRACE_END(
+		"Eat food now to fully heal before regeneration is turned off", listOf(
+			GameTimeRequirement(PhaseType.GRACE, TickTime.ofSeconds(30))
 		)
 	)
 }

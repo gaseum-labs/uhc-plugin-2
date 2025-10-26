@@ -4,10 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.UnsafeValues
 import org.bukkit.plugin.java.JavaPlugin
-import org.gaseumlabs.uhcplugin.core.Display
-import org.gaseumlabs.uhcplugin.core.GameEvents
-import org.gaseumlabs.uhcplugin.core.Login
-import org.gaseumlabs.uhcplugin.core.UHC
+import org.gaseumlabs.uhcplugin.core.*
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.protocol.UHCProtocol
 import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
@@ -20,7 +17,6 @@ import org.gaseumlabs.uhcplugin.help.AdvancementRegistry
 import org.gaseumlabs.uhcplugin.help.ChatHelp
 import org.gaseumlabs.uhcplugin.help.UHCAdvancements
 import org.gaseumlabs.uhcplugin.regenResource.RegenResourceEvents
-import org.gaseumlabs.uhcplugin.world.WorldManager
 
 class UHCPlugin : JavaPlugin() {
 	override fun onEnable() {
@@ -41,13 +37,13 @@ class UHCPlugin : JavaPlugin() {
 		Bukkit.getPluginManager().registerEvents(MelonFix(), this)
 		Bukkit.getPluginManager().registerEvents(ChatHelp(), this)
 		Bukkit.getPluginManager().registerEvents(RegenResourceEvents(), this)
+		Bukkit.getPluginManager().registerEvents(TeamChat(), this)
 
 		AdvancementRegistry.registerRoot(UHCAdvancements.UHC)
 
 		GameRunnerBot.setup()
 
 		Bukkit.getScheduler().scheduleSyncDelayedTask(this) {
-			WorldManager.init()
 			UHC.init()
 		}
 

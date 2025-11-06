@@ -102,9 +102,10 @@ object UHCAdvancements {
 	val UHC_GOLDEN_APPLE = UHC_GOLD.append(
 		key = UHCPlugin.key("uhc_golden_apple"),
 		icon = ItemType.GOLDEN_APPLE.createItemStack(),
-		title = Component.text("Acquire Hardware (Software is funny too)"),
-		description = Component.text("Used for Golden Applies and Glistering Melon. Grab as much as it takes!"),
-		criteria = UHCAdvancement.Criteria.craftItem(Material.GOLDEN_APPLE)
+		title = Component.text("Au-spicious"),
+		description = Component.text("A strong source of healing. Surplus always helps!"),
+		criteria = UHCAdvancement.Criteria.craftItem(Material.GOLDEN_APPLE),
+		frame = UHCAdvancement.Frame.GOAL,
 	)
 
 	val UHC_DIAMOND = UHC_GOLD.append(

@@ -35,7 +35,6 @@ object WorldManager {
 	}
 
 	fun initWorld(world: World) {
-		world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
 		world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false)
 		world.difficulty = Difficulty.NORMAL
 	}

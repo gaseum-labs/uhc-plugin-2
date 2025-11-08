@@ -9,7 +9,6 @@ import org.gaseumlabs.uhcplugin.core.playerData.PlayerDatas
 import org.gaseumlabs.uhcplugin.core.record.Ledger
 import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
 import org.gaseumlabs.uhcplugin.core.timer.MultiTimerHolder
-import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
 import org.gaseumlabs.uhcplugin.regenResource.RegenResourceManager
 import java.time.LocalDate
 
@@ -26,7 +25,6 @@ class ActiveGame(
 	val ranked: Boolean,
 ) : Game(gameWorld, netherWorld) {
 	val ledger = Ledger()
-	val playerRespawnTimers = MultiTimerHolder<RespawnTimer>()
 	val startDate = LocalDate.now()
 	var timer: Int = 0
 	val lootRegen = RegenResourceManager()
@@ -38,8 +36,6 @@ class ActiveGame(
 
 	override fun postTick() {
 		++timer
-		playerRespawnTimers.postTick()
-
 		if (getPhase() === endgamePhase) {
 			endgamePhase.postTick()
 		}

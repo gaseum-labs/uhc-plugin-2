@@ -82,22 +82,6 @@ object Display {
 			val phaseAlong = activeGame.getPhaseAlong()
 			val phaseType = phaseAlong.phase.type
 			val borderRadius = UHCBorder.getBorderRadius(activeGame.gameWorld.worldBorder)
-
-			val respawnTimerResult = activeGame.playerRespawnTimers.get().find { (timer) ->
-				timer.uuid == player.uniqueId
-			}
-
-			if (respawnTimerResult != null) {
-				return DisplayTemplate(
-					Component.text("Respawn in ${TickTime.toTimeString(respawnTimerResult.remaining())}"),
-					respawnTimerResult.along(),
-					BossBar.Color.WHITE,
-					BossBar.Overlay.NOTCHED_12,
-					null,
-					null
-				)
-			}
-
 			return when (phaseType) {
 				PhaseType.GRACE -> DisplayTemplate(
 					Component.text(

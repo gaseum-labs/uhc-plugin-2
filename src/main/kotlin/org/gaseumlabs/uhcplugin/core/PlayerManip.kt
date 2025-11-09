@@ -19,8 +19,6 @@ object PlayerManip {
 		player.clearActiveItem()
 		player.setStatistic(Statistic.TIME_SINCE_REST, 0)
 
-		resetAttributes(player, maxHealth)
-
 		player.fallDistance = 0.0f
 		player.saturation = 5.0f
 		player.foodLevel = 20

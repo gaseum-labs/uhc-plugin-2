@@ -1,5 +1,8 @@
 package org.gaseumlabs.uhcplugin.help
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -69,7 +72,7 @@ class ChatHelp : Listener {
 			requirement.found = true
 			if (chatHelp.requirements.all { instance -> instance.found }) {
 				chatHelp.found = true
-				player.sendMessage(MSG.help("UHC HELP: " + chatHelp.item.message))
+				player.sendMessage(MSG.help(chatHelp.item.message))
 				player.playSound(
 					player.location,
 					Sound.ENTITY_EXPERIENCE_ORB_PICKUP,

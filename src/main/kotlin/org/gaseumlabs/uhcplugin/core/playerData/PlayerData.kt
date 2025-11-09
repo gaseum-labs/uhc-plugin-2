@@ -54,7 +54,7 @@ class PlayerData private constructor(
 	var numDeaths: Int,
 	var isActive: Boolean,
 	var team: UHCTeam,
-	var maxHealth: Double,
+	var respawnHealth: Double,
 ) : SummaryPlayerData {
 	var offlineRecord: OfflineRecord = OfflineRecord(null, null, WipeMode.KEEP)
 	val chatHelp = ChatHelp.createInstances()
@@ -105,8 +105,8 @@ class PlayerData private constructor(
 			return playerData
 		}
 
-		fun getNewMaxHealth(shrinkAlong: Double): Double {
-			val exact = MathUtil.lerp(20.0, 4.0, shrinkAlong)
+		fun getRespawnHealth(shrinkAlong: Double): Double {
+			val exact = MathUtil.lerp(20.0, 10.0, shrinkAlong)
 			return (exact / 2.0).roundToInt() * 2.0
 		}
 	}

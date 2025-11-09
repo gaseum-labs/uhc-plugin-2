@@ -25,7 +25,6 @@ import org.gaseumlabs.uhcplugin.core.team.ActiveTeams
 import org.gaseumlabs.uhcplugin.core.team.Teams
 import org.gaseumlabs.uhcplugin.core.team.UHCTeam
 import org.gaseumlabs.uhcplugin.core.timer.CountdownTimer
-import org.gaseumlabs.uhcplugin.core.timer.RespawnTimer
 import org.gaseumlabs.uhcplugin.core.timer.TickTime
 import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
 import org.gaseumlabs.uhcplugin.fix.BorderFix
@@ -43,7 +42,7 @@ object UHC {
 	val gameConfig = GameConfig.read()
 	private var stage: Stage = PreGame.create()
 
-	val RESPAWN_TIME = TickTime.ofSeconds(15)
+	val RESPAWN_TIME = 1
 	var timer = 0
 
 	fun init() {
@@ -218,40 +217,6 @@ object UHC {
 	}
 
 	fun activeGameTick(activeGame: ActiveGame) {
-		activeGame.playerRespawnTimers.get().forEach { result ->
-			if (result.isDone()) {
-				val playerData = activeGame.playerDatas.get(result.timer.uuid) ?: return@forEach
-
-				val respawnLocation = PlayerSpreader.getSingleLocation(
-					activeGame,
-					playerData.uuid,
-					activeGame.gameWorld,
-					UHCBorder.getBorderRadius(activeGame.gameWorld.worldBorder),
-					PlayerSpreader.CONFIG_DEFAULT
-				)
-
-				playerData.executeAction { player ->
-					player.isGlowing
-					PlayerManip.resetPlayer(
-						player,
-						GameMode.SURVIVAL,
-						playerData.maxHealth,
-						respawnLocation
-					)
-				}.onNoZombie {
-					playerData.offlineRecord.onRespawn(
-						OfflineZombie.spawn(
-							playerData.uuid,
-							PlayerCapture.createInitial(
-								respawnLocation,
-								playerData.maxHealth
-							)
-						)
-					)
-				}
-			}
-		}
-
 		if (activeGame.isShrinkStarting()) {
 			activeGame.shrinkPhase.start(activeGame)
 		}
@@ -324,19 +289,14 @@ object UHC {
 
 		playerData.offlineRecord.onDeath(deathLocation)
 
-		playerData.executeAction { player ->
-			PlayerManip.makeSpectator(player, null)
-		}
-
 		val isElimination = if (!forcePermanent && playerData.canRespawn() && phase.type.canRespawn) {
-			activeGame.playerRespawnTimers.add(RespawnTimer(playerData.uuid, RESPAWN_TIME))
 			false
 		} else {
 			playerData.isActive = false
 			true
 		}
 
-		Broadcast.broadcastGame(activeGame, deathMessage)
+		//Broadcast.broadcastGame(activeGame, deathMessage)
 
 		if (!isElimination) return
 

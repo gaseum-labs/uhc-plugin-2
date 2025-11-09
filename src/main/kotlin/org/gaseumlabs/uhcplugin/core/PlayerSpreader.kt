@@ -118,60 +118,60 @@ object PlayerSpreader {
 		return playerToLocation[playerUuid]!!
 	}
 
-    fun getRespawnLocation(
-        activeGame: ActiveGame,
-        currentPlayerData: PlayerData,
-        world: World,
-        outerRadius: Int,
-        respawnRadius: Int,
-        config: Config,
-    ): Location {
-        val random = Random.Default
+	fun getRespawnLocation(
+		activeGame: ActiveGame,
+		currentPlayerData: PlayerData,
+		world: World,
+		outerRadius: Int,
+		respawnRadius: Int,
+		config: Config,
+	): Location {
+		val random = Random.Default
 
-        val playerLocations = activeGame.playerDatas.active.mapNotNull { playerData ->
-            if (playerData == currentPlayerData) return@mapNotNull null
-            val location = playerData.getEntity()?.location ?: return@mapNotNull null
-            if (location.world === world) location else null
-        }
-        val player = currentPlayerData.getPlayer()!!
-        val currentX = player.location.x
-        val currentZ = player.location.z
-        val candidateCoords = Array(config.numTries) {
-            val dx = random.nextInt(-respawnRadius + config.tryRadius..respawnRadius - config.tryRadius)
-            val dz = random.nextInt(-respawnRadius + config.tryRadius..respawnRadius - config.tryRadius)
+		val playerLocations = activeGame.playerDatas.active.mapNotNull { playerData ->
+			if (playerData == currentPlayerData) return@mapNotNull null
+			val location = playerData.getEntity()?.location ?: return@mapNotNull null
+			if (location.world === world) location else null
+		}
+		val player = currentPlayerData.getPlayer()!!
+		val currentX = player.location.x
+		val currentZ = player.location.z
+		val candidateCoords = Array(config.numTries) {
+			val dx = random.nextInt(-respawnRadius + config.tryRadius..respawnRadius - config.tryRadius)
+			val dz = random.nextInt(-respawnRadius + config.tryRadius..respawnRadius - config.tryRadius)
 
-            // Clamp within the total outerRadius boundary (centered at origin)
-            val newX = (currentX + dx).coerceIn((-outerRadius + config.tryRadius).toDouble(),
-                (outerRadius - config.tryRadius).toDouble()
-            )
-            val newZ = (currentZ + dz).coerceIn((-outerRadius + config.tryRadius).toDouble(),
-                (outerRadius - config.tryRadius).toDouble()
-            )
+			// Clamp within the total outerRadius boundary (centered at origin)
+			val newX = (currentX + dx).coerceIn((-outerRadius + config.tryRadius).toDouble(),
+				(outerRadius - config.tryRadius).toDouble()
+			)
+			val newZ = (currentZ + dz).coerceIn((-outerRadius + config.tryRadius).toDouble(),
+				(outerRadius - config.tryRadius).toDouble()
+			)
 
-            Coord(newX.toInt(), newZ.toInt())
-        }
+			Coord(newX.toInt(), newZ.toInt())
+		}
 
-        val playerToLocation = HashMap<UUID, Location>()
+		val playerToLocation = HashMap<UUID, Location>()
 
-        val coord = if (playerLocations.isEmpty()) {
-            candidateCoords[0]
-        } else {
-            candidateCoords.maxBy { coord ->
-                playerLocations.minOf { playerLocation ->
-                    distance2(
-                        playerLocation.x,
-                        playerLocation.z,
-                        coord.x + 0.5,
-                        coord.z + 0.5,
-                    )
-                }
-            }
-        }
+		val coord = if (playerLocations.isEmpty()) {
+			candidateCoords[0]
+		} else {
+			candidateCoords.maxBy { coord ->
+				playerLocations.minOf { playerLocation ->
+					distance2(
+						playerLocation.x,
+						playerLocation.z,
+						coord.x + 0.5,
+						coord.z + 0.5,
+					)
+				}
+			}
+		}
 
-        fillPlayerToLocationXZ(config, world, playerToLocation, listOf(currentPlayerData.uuid), coord.x, coord.z)
+		fillPlayerToLocationXZ(config, world, playerToLocation, listOf(currentPlayerData.uuid), coord.x, coord.z)
 
-        return playerToLocation[currentPlayerData.uuid]!!
-    }
+		return playerToLocation[currentPlayerData.uuid]!!
+	}
 
 	fun distance2(x0: Double, y0: Double, x1: Double, y1: Double): Double =
 		(x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)

@@ -131,44 +131,43 @@ object RegenResources {
 		}
 	}
 
-    val sugarcane = object : RegenResource(World.Environment.NORMAL, -23..24, -23..24, 5, 1.0 / 32.0) {
-        override fun setBlock(chunk: Chunk): Block? {
-            val world = chunk.world
+	val sugarcane = object : RegenResource(World.Environment.NORMAL, -23..24, -23..24, 5, 1.0 / 32.0) {
+		override fun setBlock(chunk: Chunk): Block? {
+			val world = chunk.world
 
-            val x = Random.nextInt(0..15)
-            val z = Random.nextInt(0..15)
+			val x = Random.nextInt(0..15)
+			val z = Random.nextInt(0..15)
 
-            val surfaceBlock = YFinder.findSurfaceBlock(world, chunk.x * 16 + x, chunk.z * 16 + z)
+			val surfaceBlock = YFinder.findSurfaceBlock(world, chunk.x * 16 + x, chunk.z * 16 + z)
 
-            val surfaceBlocks = SurfaceFinder.getSurfaceBlocks(world, surfaceBlock.x, surfaceBlock.z, 3)
+			val surfaceBlocks = SurfaceFinder.getSurfaceBlocks(world, surfaceBlock.x, surfaceBlock.z, 3)
 
-            val sandBlock = surfaceBlocks.firstOrNull { (block, tree) ->
-                (block.type === Material.SAND || block.type === Material.GRASS_BLOCK) && isNextToWater(block)
-            }?.block ?: return null
+			val sandBlock = surfaceBlocks.firstOrNull { (block, tree) ->
+				(block.type === Material.SAND || block.type === Material.GRASS_BLOCK) && isNextToWater(block)
+			}?.block ?: return null
 
+			var caneBlock = sandBlock
 
-            var caneBlock = sandBlock
+			for (i in 1..3) {
+				caneBlock = caneBlock.getRelative(BlockFace.UP)
+				caneBlock.setType(Material.SUGAR_CANE, false)
+			}
 
-            for (i in 1..3) {
-                caneBlock = caneBlock.getRelative(BlockFace.UP)
-                caneBlock.setType(Material.SUGAR_CANE, false)
-            }
+			return caneBlock
+		}
 
-            return caneBlock
-        }
+		override fun isUntouched(block: Block): Boolean {
+			return block.type === Material.SUGAR_CANE
+		}
 
-        override fun isUntouched(block: Block): Boolean {
-            return block.type === Material.SUGAR_CANE
-        }
-
-        private fun isNextToWater(block: Block): Boolean {
-            val faces = listOf(BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST)
-            return faces.any { face ->
-                val relative = block.getRelative(face)
-                relative.type == Material.WATER
-            }
-        }
-    }
+		private fun isNextToWater(block: Block): Boolean {
+			val faces = listOf(BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST)
+			return faces.any { face ->
+				val relative = block.getRelative(face)
+				relative.type == Material.WATER || relative.type == Material.ICE
+			}
+		}
+	}
 
 	val list = listOf(fortressChest, melon, sugarcane)
 }

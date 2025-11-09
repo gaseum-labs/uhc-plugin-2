@@ -169,11 +169,11 @@ object GameCommands {
 		)
 
 		playerData.executeAction { player ->
-			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, playerData.maxHealth, location)
+			PlayerManip.resetPlayer(player, GameMode.SURVIVAL, playerData.respawnHealth, location)
 		}.onNoZombie {
 			OfflineZombie.spawn(
 				player.uniqueId,
-				PlayerCapture.createInitial(location, playerData.maxHealth)
+				PlayerCapture.createInitial(location, playerData.respawnHealth)
 			)
 		}
 

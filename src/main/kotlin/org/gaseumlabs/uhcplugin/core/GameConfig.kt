@@ -24,7 +24,7 @@ data class GameConfig(
 				collapseTime = TickTime.ofMinutes(6),
 				finalYLevels = 21,
 				initialRadius = 384,
-				endgameRadius = 52,
+				endgameRadius = 44,
 				minReadyPlayers = 4
 			)
 		}

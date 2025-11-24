@@ -1,6 +1,7 @@
 package org.gaseumlabs.uhcplugin.core
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.GameRule
@@ -186,7 +187,7 @@ object UHC {
 				PlayerManip.resetPlayer(
 					player,
 					GameMode.SURVIVAL,
-					playerData.maxHealth,
+					playerData.respawnHealth,
 					location
 				)
 				PlayerAdvancement.grant(player, UHCAdvancements.UHC)
@@ -194,7 +195,7 @@ object UHC {
 				playerData.offlineRecord.onGameSpawn(
 					OfflineZombie.spawn(
 						playerData.uuid,
-						PlayerCapture.createInitial(location, playerData.maxHealth)
+						PlayerCapture.createInitial(location, playerData.respawnHealth)
 					)
 				)
 			}
@@ -235,7 +236,7 @@ object UHC {
 					PlayerManip.resetPlayer(
 						player,
 						GameMode.SURVIVAL,
-						playerData.maxHealth,
+						playerData.respawnHealth,
 						respawnLocation
 					)
 				}.onNoZombie {
@@ -244,7 +245,7 @@ object UHC {
 							playerData.uuid,
 							PlayerCapture.createInitial(
 								respawnLocation,
-								playerData.maxHealth
+								playerData.respawnHealth
 							)
 						)
 					)
@@ -318,7 +319,7 @@ object UHC {
 		if (phase.type.deathCounts || forcePermanent) {
 			playerData.numDeaths += 1
 			if (phase is Shrink) {
-				playerData.maxHealth = PlayerData.getNewMaxHealth(activeGame.getPhaseAlong().along)
+				playerData.respawnHealth = PlayerData.getRespawnHealth(activeGame.getPhaseAlong().along)
 			}
 		}
 
@@ -330,6 +331,19 @@ object UHC {
 
 		val isElimination = if (!forcePermanent && playerData.canRespawn() && phase.type.canRespawn) {
 			activeGame.playerRespawnTimers.add(RespawnTimer(playerData.uuid, RESPAWN_TIME))
+			val player = playerData.getPlayer()!!
+			val block = player.location.block
+			val team = playerData.team
+			team.members.forEach { playerData ->
+				playerData.getPlayer()?.sendMessage(
+					Component.text("${player.name} died at ", team.color.textColor).append(
+						Component.text(
+							"(${block.x}, ${block.y}, ${block.z})", team.color.textColor,
+							TextDecoration.BOLD
+						)
+					)
+				)
+			}
 			false
 		} else {
 			playerData.isActive = false

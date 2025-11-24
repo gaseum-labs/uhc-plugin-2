@@ -11,7 +11,7 @@ object UHCAdvancements {
 	val UHC = UHCAdvancement.createRoot(
 		key = UHCPlugin.key("uhc"),
 		icon = ItemType.GOLDEN_AXE.createItemStack(),
-		title = Component.text("UHC"),
+		title = Component.text("2HC"),
 		description = Component.text("GL, HF!"),
 		background = "minecraft:block/dirt",
 		criteria = UHCAdvancement.Criteria.impossible()
@@ -29,7 +29,7 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_apple"),
 		icon = ItemType.APPLE.createItemStack(6),
 		title = Component.text("6 Apples"),
-		description = Component.text("Dropped from every type of leaves in the game!"),
+		description = Component.text("A must for Golden Apples"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.APPLE)
 	)
 
@@ -37,7 +37,7 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_food"),
 		icon = ItemType.COOKED_BEEF.createItemStack(),
 		title = Component.text("Does Done Cooking"),
-		description = Component.text("You'll need food to sprint! A dozen steak will do just fine."),
+		description = Component.text("You'll need food to sprint! A dozen Steak will do just fine."),
 		criteria = UHCAdvancement.Criteria.obtainItemList(
 			Material.BEEF, Material.CHICKEN, Material.PORKCHOP, Material.MUTTON
 		)
@@ -47,7 +47,7 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_leather"),
 		icon = ItemType.LEATHER.createItemStack(),
 		title = Component.text("Hardly Know 'Er"),
-		description = Component.text("A necessity for books. More can't hurt!"),
+		description = Component.text("A necessity for Books"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.LEATHER)
 	)
 
@@ -63,7 +63,7 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_sand"),
 		icon = ItemType.SAND.createItemStack(),
 		title = Component.text("Don't Forget!"),
-		description = Component.text("Half a stack should do. You'll need Glass Bottles!"),
+		description = Component.text("Half a stack should do. You'll want Glass Bottles for brewing!"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.SAND)
 	)
 
@@ -71,31 +71,31 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_melon"),
 		icon = ItemType.MELON_SLICE.createItemStack(),
 		title = Component.text("Pink Pill"),
-		description = Component.text("Used for instant health potions. Find a jungle and check the bushes!"),
+		description = Component.text("A must for Instant Health potions. Look around in the forest!"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.MELON_SLICE)
 	)
 
 	val UHC_IRON = UHC_SAND.append(
 		key = UHCPlugin.key("uhc_iron"),
-		icon = ItemType.RAW_IRON.createItemStack(),
+		icon = ItemType.IRON_INGOT.createItemStack(),
 		title = Component.text("Acquire Hardware"),
-		description = Component.text("Used for just about everything. Grab it if you see it!"),
+		description = Component.text("Used for just about everything"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.RAW_IRON)
 	)
 
 	val UHC_GOLD = UHC_IRON.append(
 		key = UHCPlugin.key("uhc_gold"),
-		icon = ItemType.RAW_GOLD.createItemStack(),
-		title = Component.text("Acquire Hardware (Software is funny too)"),
-		description = Component.text("Used for Golden Applies and Glistering Melon. Grab as much as it takes!"),
+		icon = ItemType.GOLD_INGOT.createItemStack(),
+		title = Component.text("Acquire Software"),
+		description = Component.text("Grab as much as you need for Golden Apples and Glistering Melon"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.RAW_GOLD)
 	)
 
 	val UHC_GLISTERING_MELON = UHC_GOLD.append(
 		key = UHCPlugin.key("uhc_glistering_melon"),
 		icon = ItemType.GLISTERING_MELON_SLICE.createItemStack(),
-		title = Component.text("Glistering Melon"),
-		description = Component.text("Used for instant health potions. Combine melon slices and gold."),
+		title = Component.text("All That Glisters"),
+		description = Component.text("Combine Melon Slices and Gold for your Instant Health needs"),
 		criteria = UHCAdvancement.Criteria.craftItem(Material.GLISTERING_MELON_SLICE)
 	)
 
@@ -103,7 +103,7 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_golden_apple"),
 		icon = ItemType.GOLDEN_APPLE.createItemStack(),
 		title = Component.text("Au-spicious"),
-		description = Component.text("A strong source of healing. Surplus always helps!"),
+		description = Component.text("A powerful source of healing. Surplus always helps!"),
 		criteria = UHCAdvancement.Criteria.craftItem(Material.GOLDEN_APPLE),
 		frame = UHCAdvancement.Frame.GOAL,
 	)
@@ -127,7 +127,7 @@ object UHCAdvancements {
 	val UHC_ENCHANTING_TABLE = UHC_OBSIDIAN.append(
 		key = UHCPlugin.key("uhc_enchanting_table"),
 		icon = ItemType.ENCHANTING_TABLE.createItemStack(),
-		title = Component.text("Enchanting Table"),
+		title = Component.text("Enchanter"),
 		description = Component.text("Craft an enchanting table."),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.ENCHANTING_TABLE)
 	)
@@ -135,8 +135,9 @@ object UHCAdvancements {
 	val UHC_SHARP_AXE = UHC_ENCHANTING_TABLE.append(
 		key = UHCPlugin.key("uhc_sharp_axe"),
 		icon = ItemType.DIAMOND_AXE.createItemStack { meta -> meta.addEnchant(Enchantment.SHARPNESS, 1, true) },
-		title = Component.text("Sharp Axe"),
-		description = Component.text("Use an enchanted book and anvil to put sharpness on an axe"),
+		title = Component.text("Heads Will Roll"),
+		description = Component.text("Use an Anvil to apply Sharpness to an Axe"),
+		frame = UHCAdvancement.Frame.GOAL,
 		criteria = UHCAdvancement.Criteria.obtainItem(ItemType.DIAMOND_AXE.createItemStack { meta ->
 			meta.addEnchant(
 				Enchantment.SHARPNESS,
@@ -148,9 +149,9 @@ object UHCAdvancements {
 
 	val UHC_NETHER = UHC_OBSIDIAN.append(
 		key = UHCPlugin.key("uhc_nether"),
-		icon = ItemType.NETHERRACK.createItemStack(),
-		title = Component.text("UHC Level 2"),
-		description = Component.text("Construct a nether portal and enter it."),
+		icon = ItemType.FLINT_AND_STEEL.createItemStack(),
+		title = Component.text("We Need to Go Deeper"),
+		description = Component.text("Build, light and enter a Nether Portal"),
 		criteria = UHCAdvancement.Criteria.impossible()
 	)
 
@@ -158,7 +159,7 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_blaze_rod"),
 		icon = ItemType.BLAZE_ROD.createItemStack(),
 		title = Component.text("Into Fire"),
-		description = Component.text("One to craft a Brewing Stand, one to fuel it."),
+		description = Component.text("One to craft a Brewing Stand, one to fuel it"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.BLAZE_ROD)
 	)
 
@@ -166,7 +167,7 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_nether_wart"),
 		icon = ItemType.NETHER_WART.createItemStack(),
 		title = Component.text("Warts and All"),
-		description = Component.text("One to craft a Brewing Stand, one to fuel it."),
+		description = Component.text("Grab as many as you need for your potions!"),
 		criteria = UHCAdvancement.Criteria.obtainItemList(Material.NETHER_WART)
 	)
 
@@ -178,22 +179,24 @@ object UHCAdvancements {
 		key = UHCPlugin.key("uhc_healing_2"),
 		icon = splashHealing2,
 		title = Component.text("This is Healing, Too"),
-		description = Component.text("Brew a splash potion of healing II. The gold standard!"),
-		criteria = UHCAdvancement.Criteria.obtainItem(splashHealing2)
-	)
+		description = Component.text("Brew a Splash Potion of Healing II. The gold standard!"),
+		criteria = UHCAdvancement.Criteria.obtainItem(splashHealing2),
+		frame = UHCAdvancement.Frame.GOAL,
+		)
 
 	val UHC_FULL_DIAMOND = UHC_DIAMOND.append(
 		key = UHCPlugin.key("uhc_full_diamond"),
 		icon = ItemType.DIAMOND_CHESTPLATE.createItemStack(),
 		title = Component.text("Cover Me in Diamonds"),
-		description = Component.text("Every bit counts!"),
+		description = Component.text("Every bit counts"),
 		criteria = UHCAdvancement.Criteria.obtainAllItemList(
 			Material.DIAMOND_HELMET,
 			Material.DIAMOND_CHESTPLATE,
 			Material.DIAMOND_LEGGINGS,
 			Material.DIAMOND_BOOTS,
+		),
+		frame = UHCAdvancement.Frame.GOAL,
 		)
-	)
 
 	val list = listOf(
 		UHC,

@@ -12,5 +12,17 @@ object MSG {
 
 	fun error(text: String): Component = Component.text(text, TextColor.color(0xe61014))
 
-	fun help(text: String) = Component.text(text, TextColor.color(0x5368f5), TextDecoration.UNDERLINED)
+	fun help(text: String): Component {
+		return Component.text().append(Component.text()
+			.content("2HC HELP: ")
+			.color(TextColor.color(0x5368f5))
+			.decoration(TextDecoration.BOLD, true))
+			.append(
+				Component.text()
+					.content(text)
+					.color(TextColor.color(0x5368f5))
+					.build()
+			)
+			.build()
+	}
 }

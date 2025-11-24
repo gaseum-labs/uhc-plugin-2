@@ -118,8 +118,8 @@ class EndgamePhase(val collapseTime: Int, val finalYRange: IntRange) : Phase(Pha
 				timer?.let { warningTimers.remove(it.timer) }
 			}
 
-			if (glowingTimer == TickTime.ofSeconds(18)) {
-				entity.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, TickTime.ofSeconds(2), 1))
+			if (glowingTimer == TickTime.ofSeconds(15)) {
+				entity.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, TickTime.ofSeconds(5), 1))
 			}
 		}
 	}

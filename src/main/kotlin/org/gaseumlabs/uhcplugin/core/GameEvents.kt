@@ -1,5 +1,8 @@
 package org.gaseumlabs.uhcplugin.core
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.World
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
@@ -8,6 +11,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerPortalEvent
 import org.gaseumlabs.uhcplugin.core.game.ActiveGame
 import org.gaseumlabs.uhcplugin.core.game.PostGame
 import org.gaseumlabs.uhcplugin.core.playerData.PlayerData
@@ -39,6 +43,23 @@ class GameEvents : Listener {
 		UHC.onPlayerDeath(game, playerData, deathLocation, killerUuid, deathMessage, false)
 
 		Death.dropPlayer(deathPlayer)
+	}
+	@EventHandler
+	fun onPlayerPortal(event: PlayerPortalEvent) {
+		val (player, game, playerData) = getPlayerData(event.player) ?: return
+		if (event.to.world.environment == World.Environment.NORMAL) return
+		val block = player.location.block
+		val team = playerData.team
+		team.members.forEach { playerData ->
+			playerData.getPlayer()?.sendMessage(
+				Component.text("${player.name} entered the Nether at ", team.color.textColor).append(
+					Component.text(
+						"(${block.x}, ${block.y}, ${block.z})", team.color.textColor,
+						TextDecoration.BOLD
+					)
+				)
+			)
+		}
 	}
 
 	@EventHandler

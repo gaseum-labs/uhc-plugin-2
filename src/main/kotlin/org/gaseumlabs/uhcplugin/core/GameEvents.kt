@@ -30,8 +30,6 @@ class GameEvents : Listener {
 	fun onPlayerDeath(event: PlayerDeathEvent) {
 		val (deathPlayer, game, playerData) = getPlayerData(event.player) ?: return
 
-		event.isCancelled = true
-
 		val deathLocation = deathPlayer.location
 
 		val (killerUuid, deathMessage) = Death.getKiller(
@@ -43,6 +41,15 @@ class GameEvents : Listener {
 		UHC.onPlayerDeath(game, playerData, deathLocation, killerUuid, deathMessage, false)
 
 		Death.dropPlayer(deathPlayer)
+		val respawnLocation = PlayerSpreader.getRespawnLocation(
+			game,
+			playerData,
+			game.gameWorld,
+			UHCBorder.getBorderRadius(game.gameWorld.worldBorder),
+			100,
+			PlayerSpreader.CONFIG_DEFAULT
+		)
+		deathPlayer.setRespawnLocation(respawnLocation, true)
 	}
 	@EventHandler
 	fun onPlayerPortal(event: PlayerPortalEvent) {

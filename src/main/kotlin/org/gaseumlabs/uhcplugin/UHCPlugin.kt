@@ -8,6 +8,7 @@ import org.gaseumlabs.uhcplugin.core.*
 import org.gaseumlabs.uhcplugin.core.playerData.OfflineZombie
 import org.gaseumlabs.uhcplugin.core.protocol.UHCProtocol
 import org.gaseumlabs.uhcplugin.discord.GameRunnerBot
+import org.gaseumlabs.uhcplugin.fix.AppleFix
 import org.gaseumlabs.uhcplugin.fix.BrewFix
 import org.gaseumlabs.uhcplugin.fix.MelonFix
 import org.gaseumlabs.uhcplugin.fix.PearlFix
@@ -35,6 +36,7 @@ class UHCPlugin : JavaPlugin() {
 		Bukkit.getPluginManager().registerEvents(BrewFix(), this)
 		Bukkit.getPluginManager().registerEvents(AdvancementEvents(), this)
 		Bukkit.getPluginManager().registerEvents(MelonFix(), this)
+        Bukkit.getPluginManager().registerEvents(AppleFix(), this)
 		Bukkit.getPluginManager().registerEvents(ChatHelp(), this)
 		Bukkit.getPluginManager().registerEvents(RegenResourceEvents(), this)
 		Bukkit.getPluginManager().registerEvents(TeamChat(), this)
